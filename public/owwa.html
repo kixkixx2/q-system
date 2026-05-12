@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OWWA Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/system-logo.svg" />
+    <script>
+      (async function enforceOwwaAuth() {
+        const returnTo = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+        try {
+          const response = await fetch('/api/auth/session?agency=OWWA', { credentials: 'same-origin', cache: 'no-store' });
+          if (!response.ok) throw new Error('Unauthorized');
+          const auth = await response.json();
+          sessionStorage.setItem('officerAuth', JSON.stringify({ agency: auth.agency, username: auth.username, loggedInAt: auth.loggedInAt }));
+        } catch (_error) {
+          sessionStorage.removeItem('officerAuth');
+          window.location.replace(`/index.html?role=officer&agency=OWWA&returnTo=${returnTo}`);
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --bg-a: #f2eae0; --bg-b: #b4d3d9; --surface: #f2eae0;
+        --surface-soft: #ddd4e8; --surface-border: #bda6ce;
+        --text-main: #2f2740; --text-soft: #5f5674;
+        --peach: #9b8ec7; --cyan: #9b8ec7; --card-bg: #f7f1e8;
+      }
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: radial-gradient(circle at 10% 18%, #f8f2ea 0%, transparent 42%),
+          radial-gradient(circle at 86% 14%, #d7e9ee 0%, transparent 42%),
+          linear-gradient(130deg, var(--bg-a) 0%, var(--bg-b) 100%);
+        transition: background 0.35s ease;
+      }
+      h1, h2, h3 { font-family: 'Sora', sans-serif; }
+      .panel {
+        border: 1px solid var(--surface-border);
+        background: linear-gradient(180deg, #f6efe7 0%, var(--surface) 100%);
+        box-shadow: 0 18px 34px rgba(72,62,98,0.18);
+        transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+      }
+      button, a, select { cursor: pointer; }
+      button, a { transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease; }
+      button:hover, a:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 8px 18px rgba(5,15,30,0.28); }
+      .popup-backdrop {
+        position: fixed; inset: 0; background: rgba(47,39,64,0.18);
+        display: grid; place-items: center; opacity: 0; pointer-events: none;
+        transition: opacity 0.16s ease; z-index: 50;
+      }
+      .popup-backdrop.show { opacity: 1; pointer-events: auto; }
+      .popup-card {
+        width: min(92vw, 360px); border-radius: 16px;
+        border: 1px solid var(--surface-border);
+        background: linear-gradient(180deg, #f6efe6 0%, #ebe0f0 100%);
+        box-shadow: 0 14px 28px rgba(72,62,98,0.2); padding: 16px; color: #3d3253;
+        transition: background 0.35s ease, border-color 0.35s ease;
+      }
+      .popup-title { font-family: 'Sora', sans-serif; font-weight: 700; margin-bottom: 6px; }
+      .popup-message { font-size: 0.94rem; color: #4f4268; transition: color 0.35s ease; }
+      .queue-card { animation: riseIn 420ms ease; transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.35s ease; }
+      .queue-card:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(1,8,20,0.35); border-color: #4c5d73; }
+      .queue-card.new-highlight { animation: riseIn 420ms ease, flashGlow 1200ms ease; }
+      @keyframes riseIn { from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);} }
+      @keyframes flashGlow { 0%{box-shadow:0 0 0 rgba(18,214,207,0);}35%{box-shadow:0 0 0 4px rgba(18,214,207,0.22);}100%{box-shadow:0 0 0 rgba(18,214,207,0);} }
+
+      /* ── Waiting Tickets Badge ────────────────────────────── */
+      .waiting-badge {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 8px 16px; border-radius: 14px;
+        border: 1px solid var(--surface-border);
+        background: var(--card-bg);
+        font-family: 'Sora', sans-serif; font-size: 0.82rem; font-weight: 700;
+        color: var(--text-main);
+        box-shadow: 0 4px 14px rgba(72,62,98,0.12);
+        transition: background 0.35s ease, border-color 0.35s ease, color 0.35s ease, box-shadow 0.35s ease;
+      }
+      .waiting-badge .wb-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #e8a838;
+        box-shadow: 0 0 0 0 rgba(232,168,56,0.45);
+        animation: pulseDot 2s ease-in-out infinite;
+      }
+      .waiting-badge .wb-count {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 26px; height: 26px; border-radius: 8px;
+        padding: 0 6px;
+        background: var(--peach); color: #fff;
+        font-size: 0.85rem; font-weight: 800;
+        transition: transform 0.25s ease;
+      }
+      .waiting-badge .wb-count.bump { animation: bumpCount 0.35s ease; }
+      @keyframes pulseDot { 0%,100%{box-shadow:0 0 0 0 rgba(232,168,56,0.45);} 50%{box-shadow:0 0 0 5px rgba(232,168,56,0);} }
+      @keyframes bumpCount { 0%{transform:scale(1);} 40%{transform:scale(1.25);} 100%{transform:scale(1);} }
+      html[data-theme="dark"] .waiting-badge { background: #252236; border-color: #3a3358; box-shadow: 0 4px 14px rgba(0,0,0,0.3); }
+
+      /* ── Priority Badge ─────────────────────────────────── */
+      .priority-card { border-left: 3px solid #e8a838 !important; }
+      .priority-badge {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 2px 8px; border-radius: 999px;
+        background: linear-gradient(135deg, #e8a838, #f0c060);
+        color: #5a3800; font-family: 'Sora', sans-serif;
+        font-size: 0.68rem; font-weight: 800;
+        letter-spacing: 0.5px; text-transform: uppercase;
+        box-shadow: 0 2px 8px rgba(232,168,56,0.3);
+        animation: priorityGlow 2s ease-in-out infinite;
+      }
+      @keyframes priorityGlow { 0%,100%{box-shadow:0 2px 8px rgba(232,168,56,0.3);} 50%{box-shadow:0 2px 14px rgba(232,168,56,0.55);} }
+      html[data-theme="dark"] .priority-badge { background: linear-gradient(135deg, #c48520, #d9a040); color: #2a1a00; }
+
+      /* ── Dark Mode ──────────────────────────────────────── */
+      html[data-theme="dark"] {
+        --bg-a: #12101a; --bg-b: #1a1f2e; --surface: #1e1b2e;
+        --surface-soft: #2e2a42; --surface-border: #3a3358;
+        --text-main: #e8e0f5; --text-soft: #9b91b8;
+        --peach: #a897d8; --cyan: #7e6ec0; --card-bg: #252236;
+      }
+      html[data-theme="dark"] body {
+        background: radial-gradient(circle at 10% 18%, #1e1535 0%, transparent 42%),
+          radial-gradient(circle at 86% 14%, #12202e 0%, transparent 42%),
+          linear-gradient(130deg, #12101a 0%, #1a1f2e 100%);
+      }
+      html[data-theme="dark"] .panel { background: linear-gradient(180deg, #221e33 0%, #1e1b2e 100%); border-color: #3a3358; box-shadow: 0 18px 34px rgba(0,0,0,0.45); }
+      html[data-theme="dark"] .popup-card { background: linear-gradient(180deg, #252236 0%, #1e1b2e 100%); border-color: #3a3358; color: #e8e0f5; }
+      html[data-theme="dark"] .popup-message { color: #9b91b8; }
+      html[data-theme="dark"] .queue-card { border-color: #3a3358 !important; }
+      html[data-theme="dark"] .queue-card:hover { box-shadow: 0 14px 30px rgba(0,0,0,0.55); border-color: #5a4e8a !important; }
+
+      /* ── Floating theme toggle (top-right) ─────────────── */
+      .theme-fab {
+        position: fixed; top: 14px; right: 16px; z-index: 100;
+        display: inline-flex; align-items: center; gap: 7px;
+        padding: 8px 16px; border-radius: 999px;
+        border: 1px solid var(--surface-border);
+        background: var(--surface-soft);
+        color: var(--text-main);
+        font-family: 'Sora', sans-serif; font-size: 0.78rem; font-weight: 700;
+        cursor: pointer; user-select: none;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+        transition: background 0.3s, border-color 0.3s, color 0.3s, box-shadow 0.2s, transform 0.15s;
+      }
+      .theme-fab:hover { box-shadow: 0 8px 22px rgba(0,0,0,0.22); transform: translateY(-1px); }
+      .t-icon { font-size: 1rem; display: inline-block; transition: transform 0.45s ease; }
+      html[data-theme="dark"] .t-icon { transform: rotate(25deg); }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-8">
+
+    <!-- Floating dark mode toggle (top-right, shared key) -->
+    <button id="themeToggleBtn" type="button" class="theme-fab" aria-label="Toggle dark mode">
+      <span class="t-icon">🌙</span>
+      <span id="themeLabel">Dark</span>
+    </button>
+
+    <main class="panel max-w-4xl mx-auto rounded-3xl p-5 md:p-8" style="position:relative;">
+      <header class="mb-5 space-y-2">
+        <!-- Queue Counters Badge (top-right inside panel) -->
+        <div id="counterBadge" class="waiting-badge" style="position:absolute;top:16px;right:20px;">
+          <span class="wb-dot"></span>
+          <span style="color:var(--text-soft);font-weight:600;font-size:0.78rem;">WAITING</span>
+          <span id="waitingCount" class="wb-count">0</span>
+          <span style="color:var(--text-soft);font-weight:600;font-size:0.78rem;margin-left:4px;">DONE</span>
+          <span id="doneCount" class="wb-count" style="background:#0f845a;">0</span>
+        </div>
+        <p class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide" style="border-color:var(--surface-border);background:#ebe3f0;color:var(--peach);">OWWA Desk</p>
+        <h1 id="welcomeTitle" class="text-3xl md:text-4xl font-extrabold" style="color:var(--text-main);">Welcome User</h1>
+        <p class="text-sm md:text-base" style="color:var(--text-soft);">New clients appear instantly as soon as the kiosk routes them to OWWA.</p>
+        <div class="flex flex-wrap gap-2 items-center">
+          <a href="/officer.html?agency=OWWA" class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold" style="background:#e5f0ea;color:#2f5f4a;border:1px solid #9fc4b2;">Tickets</a>
+          <button id="logoutBtn" type="button" class="inline-flex items-center rounded-xl px-3 py-2 text-sm font-semibold" style="background:#efe6f4;color:#4f4268;border:1px solid var(--surface-border);">Log Out</button>
+        </div>
+      </header>
+      <p id="status-msg" class="mb-3 text-sm" style="color:var(--text-soft);">Waiting for incoming clients.</p>
+      <div id="queue-list" class="space-y-3">
+        <div id="empty-state" class="rounded-2xl border border-dashed p-8 text-center" style="border-color:var(--surface-border);background:var(--card-bg);color:var(--text-soft);">No incoming clients yet.</div>
+      </div>
+    </main>
+
+    <div id="errorPopup" class="popup-backdrop" aria-hidden="true" role="dialog" aria-label="Error alert">
+      <div class="popup-card">
+        <p class="popup-title">System Notice</p>
+        <p id="errorPopupMessage" class="popup-message">Something went wrong.</p>
+        <button id="errorPopupClose" type="button" class="mt-3 w-full rounded-xl px-3 py-2 text-sm font-semibold" style="background:#9b8ec7;color:#241c35;">Okay</button>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      // Admin force-disconnect
+      socket.on('force_disconnect', (data) => {
+        const msg = (data && data.reason) ? data.reason : 'You have been disconnected by the administrator.';
+        socket.disconnect();
+        sessionStorage.clear();
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(47,39,64,0.96);display:grid;place-items:center;';
+        overlay.innerHTML = `<div style="text-align:center;color:#f2eae0;font-family:Sora,sans-serif;padding:32px;max-width:420px;"><div style="font-size:3rem;margin-bottom:16px;">🔌</div><h2 style="font-size:1.5rem;font-weight:800;margin-bottom:10px;">Disconnected</h2><p style="font-size:1rem;opacity:0.8;margin-bottom:24px;">${msg}</p><p style="font-size:0.85rem;opacity:0.55;">Redirecting to login in 3 seconds…</p></div>`;
+        document.body.appendChild(overlay);
+        setTimeout(() => { window.location.replace('/index.html'); }, 3000);
+      });
+      socket.on('force_logout', function(data) {
+        alert('\u26a0\ufe0f ' + ((data && data.reason) || 'You have been logged out by an administrator.'));
+        fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(function(){});
+        sessionStorage.clear();
+        window.location.replace('/index.html');
+      });
+
+      // ── Shared Dark Mode (key: queue_theme) ────────────────────────
+      const THEME_KEY = 'queue_theme';
+      const themeToggleBtn = document.getElementById('themeToggleBtn');
+      const themeLabel = document.getElementById('themeLabel');
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        const isDark = theme === 'dark';
+        themeToggleBtn.querySelector('.t-icon').textContent = isDark ? '☀️' : '🌙';
+        themeLabel.textContent = isDark ? 'Light' : 'Dark';
+      }
+
+      applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+
+      themeToggleBtn.addEventListener('click', () => {
+        const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(THEME_KEY, next);
+        applyTheme(next);
+      });
+
+      // Sync instantly when another tab changes the theme
+      window.addEventListener('storage', (e) => {
+        if (e.key === THEME_KEY) applyTheme(e.newValue || 'light');
+      });
+
+      // ── Main logic ─────────────────────────────────────────────────
+      const list = document.getElementById('queue-list');
+      const statusMessage = document.getElementById('status-msg');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const welcomeTitle = document.getElementById('welcomeTitle');
+      const errorPopup = document.getElementById('errorPopup');
+      const errorPopupMessage = document.getElementById('errorPopupMessage');
+      const errorPopupClose = document.getElementById('errorPopupClose');
+
+      function showErrorPopup(message) { errorPopupMessage.textContent = message; errorPopup.classList.add('show'); errorPopup.setAttribute('aria-hidden', 'false'); }
+      function hideErrorPopup() { errorPopup.classList.remove('show'); errorPopup.setAttribute('aria-hidden', 'true'); }
+      errorPopupClose.addEventListener('click', hideErrorPopup);
+      errorPopup.addEventListener('click', (e) => { if (e.target === errorPopup) hideErrorPopup(); });
+
+      let currentAuth = null;
+      try { currentAuth = JSON.parse(sessionStorage.getItem('officerAuth') || 'null'); } catch (_) {}
+      const currentOfficer = String(currentAuth?.username || '');
+      welcomeTitle.textContent = `Welcome ${String(currentAuth?.username || 'User').toUpperCase()}`;
+
+      function escapeHtml(v) {
+        return String(v).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+      }
+
+      function showEmptyState() {
+        if (list.children.length > 0) return;
+        const card = document.createElement('div');
+        card.id = 'empty-state';
+        card.className = 'rounded-2xl border border-dashed p-8 text-center';
+        card.style.cssText = 'border-color:var(--surface-border);background:var(--card-bg);color:var(--text-soft);';
+        card.textContent = 'No incoming clients yet.';
+        list.appendChild(card);
+      }
+
+      function hideEmptyState() { const e = document.getElementById('empty-state'); if (e) e.remove(); }
+
+      function createServiceTags(services) {
+        return services.map(s => `<span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold" style="background:#ebe3f0;color:var(--peach);border:1px solid var(--surface-border);">${escapeHtml(s)}</span>`).join(' ');
+      }
+
+      function sendToOfficer(ticketId) {
+        if (!currentOfficer) { showErrorPopup('Session expired. Please log in again.'); window.location.href = '/index.html?role=officer&agency=OWWA'; return; }
+        socket.emit('claim_ticket', { ticket_id: ticketId, agency: 'OWWA', officer: currentOfficer }, (response) => {
+          if (!response?.ok) { showErrorPopup(response?.message || 'Failed to claim ticket.'); loadExistingQueue(); return; }
+          window.location.href = `/officer.html?${new URLSearchParams({ agency: 'OWWA', ticket: String(ticketId) }).toString()}`;
+        });
+      }
+
+      function addClientCard(data, prepend = true) {
+        hideEmptyState();
+        const card = document.createElement('div');
+        card.className = 'queue-card rounded-2xl border p-4' + (data.priority ? ' priority-card' : '');
+        card.style.cssText = 'border-color:var(--surface-border);background:var(--card-bg);';
+        card.dataset.ticketId = data.ticket_id;
+        const isDone = data.status === 'done';
+        const priorityHtml = data.priority ? '<span class="priority-badge">PRIORITY</span>' : '';
+        card.innerHTML = `
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-sm font-semibold" style="color:var(--text-soft);">Ticket ${escapeHtml(data.display_ticket || '#' + data.ticket_id)}</p>
+            <div class="flex items-center gap-2">
+              ${priorityHtml}
+              <span class="state-badge rounded-full px-2.5 py-1 text-xs font-semibold" style="background:${isDone?'#e5f0ea':'#ebe3f0'};color:${isDone?'#2f5f4a':'#4f4268'};border:1px solid ${isDone?'#9fc4b2':'var(--surface-border)'};">${isDone?'Done':'Waiting'}</span>
+            </div>
+          </div>
+          <p class="mt-2 text-lg font-bold" style="color:var(--text-main);">${escapeHtml(data.client_identifier)}</p>
+          ${data.gender ? `<p class="mt-1 text-sm" style="color:var(--text-soft);">Gender: ${escapeHtml(data.gender)}</p>` : ''}
+          ${(data.barangay||data.municipality||data.province) ? `<p class="mt-1 text-sm" style="color:var(--text-soft);text-transform:uppercase;">Address: ${escapeHtml([data.barangay,data.municipality,data.province].filter(Boolean).join(', '))}</p>` : ''}
+          <div class="mt-3 flex flex-wrap gap-2">${createServiceTags(data.services||[])}</div>
+          ${data.note ? `<p class="mt-3 text-sm" style="color:var(--text-soft);"><span style="color:var(--peach);">Kiosk Note:</span> ${escapeHtml(data.note)}</p>` : ''}
+          ${isDone ? '' : '<button class="get-button mt-4 rounded-xl px-3 py-2 text-sm font-semibold" style="background:var(--cyan);color:#241c35;">Get This</button>'}`;
+        const getButton = card.querySelector('.get-button');
+        if (getButton) getButton.addEventListener('click', () => sendToOfficer(data.ticket_id));
+        if (prepend) list.prepend(card); else list.appendChild(card);
+        requestAnimationFrame(() => { card.classList.add('new-highlight'); setTimeout(() => card.classList.remove('new-highlight'), 1300); });
+      }
+
+      const waitingCountEl = document.getElementById('waitingCount');
+      const doneCountEl = document.getElementById('doneCount');
+      let lastWaitingCount = -1;
+      let lastDoneCount = -1;
+
+      function updateWaitingBadge(count) {
+        waitingCountEl.textContent = count;
+        if (lastWaitingCount !== -1 && count !== lastWaitingCount) {
+          waitingCountEl.classList.remove('bump');
+          void waitingCountEl.offsetWidth;
+          waitingCountEl.classList.add('bump');
+        }
+        lastWaitingCount = count;
+      }
+
+      function updateDoneBadge(count) {
+        doneCountEl.textContent = count;
+        if (lastDoneCount !== -1 && count !== lastDoneCount) {
+          doneCountEl.classList.remove('bump');
+          void doneCountEl.offsetWidth;
+          doneCountEl.classList.add('bump');
+        }
+        lastDoneCount = count;
+      }
+
+      async function loadDoneCount() {
+        try {
+          const res = await fetch('/api/queue/OWWA?status=done');
+          if (!res.ok) return;
+          const done = await res.json();
+          updateDoneBadge(done.length);
+        } catch (_) {}
+      }
+
+      async function loadExistingQueue() {
+        try {
+          const response = await fetch('/api/queue/OWWA?status=waiting&scope=available');
+          if (!response.ok) throw new Error();
+          const clients = await response.json();
+          clients.sort((a, b) => (b.priority || 0) - (a.priority || 0) || a.ticket_id - b.ticket_id);
+          list.innerHTML = '';
+          clients.forEach((c) => addClientCard(c, false));
+          showEmptyState();
+          updateWaitingBadge(clients.length);
+        } catch (_) { showErrorPopup('Could not load current queue list.'); }
+      }
+
+      function playNotification() { try { if ('vibrate' in navigator) navigator.vibrate([200,100,200]); } catch(e){} }
+
+      socket.on('owwa_incoming_client', (data) => { loadExistingQueue(); loadDoneCount(); statusMessage.textContent = `New ticket ${data.display_ticket||'#'+data.ticket_id} added.`; statusMessage.style.color = 'var(--text-soft)'; playNotification(); });
+      socket.on('owwa_client_updated', (data) => { if (data?.status==='done'||data?.action==='claimed') { loadExistingQueue(); loadDoneCount(); } });
+      socket.on('system_daily_reset', (data) => { statusMessage.textContent = `🔄 ${data.message}`; statusMessage.style.color = '#4f4268'; loadExistingQueue(); loadDoneCount(); });
+
+      logoutBtn.addEventListener('click', async () => {
+        try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (_) {}
+        sessionStorage.removeItem('officerAuth');
+        window.location.href = '/index.html?role=officer&agency=OWWA';
+      });
+
+      loadExistingQueue();
+      loadDoneCount();
+      setInterval(() => { loadExistingQueue(); loadDoneCount(); }, 5000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Queue Kiosk</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/system-logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --bg-a: #f2eae0;
+        --bg-b: #b4d3d9;
+        --surface: #f2eae0;
+        --surface-soft: #b4d3d9;
+        --surface-border: #bda6ce;
+        --text-main: #2f2740;
+        --text-soft: #5f5674;
+        --peach: #9b8ec7;
+        --peach-soft: #8879b8;
+        --cyan: #9b8ec7;
+        --cyan-dark: #8678b6;
+      }
+
+      body {
+        font-family: 'Outfit', sans-serif;
+      }
+
+      h1,
+      h2,
+      h3,
+      button,
+      legend {
+        font-family: 'Sora', sans-serif;
+      }
+
+      .hero-bg {
+        background: radial-gradient(circle at 8% 12%, #f8f2ea 0%, transparent 42%),
+          radial-gradient(circle at 80% 14%, #d7e9ee 0%, transparent 44%),
+          linear-gradient(130deg, var(--bg-a) 0%, var(--bg-b) 100%);
+        background-size: 140% 140%;
+        animation: bgShift 16s ease-in-out infinite;
+      }
+
+      .glass-card {
+        border: 1px solid var(--surface-border);
+        background: linear-gradient(180deg, #f6efe7 0%, var(--surface) 100%);
+        box-shadow: 0 16px 32px rgba(78, 65, 106, 0.18);
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+      }
+
+      .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 24px 48px rgba(2, 8, 18, 0.52);
+      }
+
+      .service-chip {
+        transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+        cursor: pointer;
+      }
+
+      .service-chip:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 22px rgba(2, 12, 27, 0.22);
+      }
+
+      .service-chip input:checked + span {
+        background: linear-gradient(120deg, #bda6ce, var(--cyan));
+        color: #241c35;
+        border-color: transparent;
+      }
+
+      .service-chip span {
+        border: 1px solid var(--surface-border);
+        background: var(--surface-soft);
+        color: var(--text-main);
+      }
+
+      .field-control {
+        border: 1px solid var(--surface-border);
+        background: var(--surface-soft);
+        color: var(--text-main);
+      }
+
+      .field-control::placeholder {
+        color: var(--text-soft);
+      }
+
+      .field-control:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 2px #9b8ec744;
+        transform: translateY(-1px);
+      }
+
+      .field-control,
+      #submitBtn {
+        transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+      }
+
+      button,
+      select,
+      a {
+        cursor: pointer;
+      }
+
+      button:hover,
+      a:hover {
+        box-shadow: 0 10px 22px rgba(5, 15, 30, 0.28);
+      }
+
+      .popup-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(47, 39, 64, 0.18);
+        display: grid;
+        place-items: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.16s ease;
+        z-index: 50;
+      }
+
+      .popup-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .popup-card {
+        width: min(92vw, 360px);
+        border-radius: 16px;
+        border: 1px solid #bda6ce;
+        background: linear-gradient(180deg, #f6efe6 0%, #ebe0f0 100%);
+        box-shadow: 0 18px 36px rgba(79, 63, 109, 0.2);
+        padding: 16px;
+        color: #3d3253;
+      }
+
+      .popup-title {
+        font-family: 'Sora', sans-serif;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .popup-message {
+        font-size: 0.94rem;
+        color: #4f4268;
+      }
+
+      .fade-slide {
+        animation: fadeSlide 500ms ease forwards;
+      }
+
+      @keyframes fadeSlide {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes bgShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .hero-bg,
+        .fade-slide {
+          animation: none;
+        }
+      }
+    </style>
+    <script>
+      (async function enforceKioskAuth() {
+        const returnTo = encodeURIComponent(`${window.location.pathname}${window.location.search}`);
+
+        try {
+          const response = await fetch('/api/auth/session?role=kiosk', {
+            credentials: 'same-origin',
+            cache: 'no-store',
+          });
+
+          if (!response.ok) {
+            throw new Error('Unauthorized');
+          }
+
+          const auth = await response.json();
+          sessionStorage.setItem(
+            'kioskAuth',
+            JSON.stringify({
+              role: auth.role,
+              username: auth.username,
+              loggedInAt: auth.loggedInAt,
+            })
+          );
+        } catch (_error) {
+          sessionStorage.removeItem('kioskAuth');
+          window.location.replace(`/index.html?returnTo=${returnTo}`);
+        }
+      })();
+    </script>
+  </head>
+  <body class="hero-bg min-h-screen flex items-center justify-center p-4 md:p-8">
+    <main class="glass-card w-full max-w-3xl rounded-3xl p-6 md:p-8 space-y-7 fade-slide">
+      <header class="space-y-2">
+        <p class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide" style="border-color: var(--surface-border); background: #ebe3f0; color: var(--peach);">Client Intake Kiosk</p>
+        <div class="flex justify-end">
+          <button id="kioskLogoutBtn" type="button" class="rounded-xl px-3 py-2 text-xs font-semibold" style="background: #efe6f4; color: #4f4268; border: 1px solid var(--surface-border);">Log Out Kiosk</button>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-extrabold" style="color: var(--text-main);">Route Clients Faster</h1>
+        <p class="max-w-2xl" style="color: var(--text-soft);">Capture walk-ins once, then route each client to the right agency queue in real time.</p>
+      </header>
+
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="firstName" class="block text-sm font-medium" style="color: var(--peach);">First Name</label>
+          <input id="firstName" type="text" placeholder="Juan" class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none" />
+        </div>
+
+        <div>
+          <label for="middleName" class="block text-sm font-medium" style="color: var(--peach);">Middle Name (optional)</label>
+          <input id="middleName" type="text" placeholder="Santos" class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none" />
+        </div>
+
+        <div>
+          <label for="lastName" class="block text-sm font-medium" style="color: var(--peach);">Last Name</label>
+          <input id="lastName" type="text" placeholder="Dela Cruz" class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none" />
+        </div>
+
+        <div>
+          <label for="agency" class="block text-sm font-medium" style="color: var(--peach);">Agency</label>
+          <select id="agency" class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none">
+            <option value="OWWA">OWWA</option>
+            <option value="DMW">DMW</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="gender" class="block text-sm font-medium" style="color: var(--peach);">Gender</label>
+          <select id="gender" class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none">
+            <option value="">Select gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label for="province" class="block text-sm font-medium" style="color: var(--peach);">Province</label>
+          <select id="province" class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none">
+            <option value="">Select province</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="municipality" class="block text-sm font-medium" style="color: var(--peach);">Municipality</label>
+          <select id="municipality" class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none" disabled>
+            <option value="">Select municipality/city</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="barangay" class="block text-sm font-medium" style="color: var(--peach);">Barangay</label>
+          <select id="barangay" class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none" disabled>
+            <option value="">Select barangay</option>
+          </select>
+        </div>
+      </section>
+
+      <section>
+        <label for="kioskNote" class="block text-sm font-medium" style="color: var(--peach);">Kiosk Note (optional)</label>
+        <textarea id="kioskNote" rows="3" maxlength="300" placeholder="Add a short note for the officer..." class="field-control mt-1.5 w-full rounded-xl px-3 py-3 focus:outline-none resize-none"></textarea>
+      </section>
+
+      <section>
+        <label class="priority-toggle">
+          <input type="checkbox" id="priorityCheck" class="sr-only" />
+          <span class="pt-track">
+            <span class="pt-thumb"></span>
+          </span>
+          <span class="pt-label">Priority Client</span>
+          <span class="pt-hint">(Senior, PWD, Pregnant)</span>
+        </label>
+        <style>
+          .priority-toggle {
+            display: inline-flex; align-items: center; gap: 10px;
+            cursor: pointer; user-select: none;
+            padding: 10px 16px; border-radius: 14px;
+            border: 1px solid var(--surface-border);
+            background: var(--surface-soft);
+            transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+          }
+          .priority-toggle:hover { border-color: #e8a838; box-shadow: 0 4px 16px rgba(232,168,56,0.15); }
+          .pt-track {
+            position: relative; width: 42px; height: 24px; border-radius: 999px;
+            background: #c8c0d8; transition: background 0.25s;
+          }
+          .pt-thumb {
+            position: absolute; top: 3px; left: 3px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            transition: transform 0.25s;
+          }
+          #priorityCheck:checked ~ .pt-track {
+            background: linear-gradient(135deg, #e8a838, #f0c060);
+          }
+          #priorityCheck:checked ~ .pt-track .pt-thumb {
+            transform: translateX(18px);
+          }
+          .priority-toggle:has(#priorityCheck:checked) {
+            border-color: #e8a838; background: #fef6e8;
+            box-shadow: 0 0 0 2px rgba(232,168,56,0.2);
+          }
+          .pt-label {
+            font-family: 'Sora', sans-serif; font-size: 0.88rem;
+            font-weight: 700; color: var(--text-main);
+          }
+          .pt-hint {
+            font-size: 0.75rem; color: var(--text-soft); font-weight: 500;
+          }
+        </style>
+      </section>
+
+      <fieldset class="space-y-2">
+        <legend class="text-sm font-semibold" style="color: var(--peach);">Services</legend>
+        <div id="servicesContainer" class="grid grid-cols-2 md:grid-cols-4 gap-2" style="color: var(--text-main);"></div>
+      </fieldset>
+
+      <button id="submitBtn" class="w-full rounded-xl py-3 font-semibold transition" style="background: var(--cyan); color: #241c35;">+ Route Client To Queue</button>
+
+      <section class="rounded-2xl border p-4" style="border-color: var(--surface-border); background: #efe6f4;">
+        <h2 class="text-sm font-semibold uppercase tracking-wide" style="color: var(--peach-soft);">Status</h2>
+        <p id="status" class="mt-1 text-sm" style="color: var(--text-soft);">Waiting for a new client entry.</p>
+      </section>
+    </main>
+
+    <div id="errorPopup" class="popup-backdrop" aria-hidden="true" role="dialog" aria-label="Error alert">
+      <div class="popup-card">
+        <p class="popup-title">System Notice</p>
+        <p id="errorPopupMessage" class="popup-message">Something went wrong.</p>
+        <button id="errorPopupClose" type="button" class="mt-3 w-full rounded-xl px-3 py-2 text-sm font-semibold" style="background: #9b8ec7; color: #241c35;">Okay</button>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      // Admin force-disconnect handler
+      socket.on('force_disconnect', (data) => {
+        const msg = (data && data.reason) ? data.reason : 'You have been disconnected by the administrator.';
+        socket.disconnect();
+        sessionStorage.clear();
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(47,39,64,0.96);display:grid;place-items:center;';
+        overlay.innerHTML = `
+          <div style="text-align:center;color:#f2eae0;font-family:Sora,sans-serif;padding:32px;max-width:420px;">
+            <div style="font-size:3rem;margin-bottom:16px;">🔌</div>
+            <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:10px;">Disconnected</h2>
+            <p style="font-size:1rem;opacity:0.8;margin-bottom:24px;">${msg}</p>
+            <p style="font-size:0.85rem;opacity:0.55;">Redirecting to login in 3 seconds…</p>
+          </div>`;
+        document.body.appendChild(overlay);
+        setTimeout(() => { window.location.replace('/index.html'); }, 3000);
+      });
+
+      // Admin force-logout: redirect immediately when admin kicks this device
+      socket.on('force_logout', function(data) {
+        alert('\u26a0\ufe0f ' + ((data && data.reason) || 'You have been logged out by an administrator.'));
+        fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(function(){});
+        sessionStorage.clear();
+        window.location.replace('/index.html');
+      });
+      const status = document.getElementById('status');
+      const submitButton = document.getElementById('submitBtn');
+      const servicesContainer = document.getElementById('servicesContainer');
+      const agencySelect = document.getElementById('agency');
+      const provinceSelect = document.getElementById('province');
+      const municipalitySelect = document.getElementById('municipality');
+      const barangaySelect = document.getElementById('barangay');
+      const kioskLogoutBtn = document.getElementById('kioskLogoutBtn');
+      const errorPopup = document.getElementById('errorPopup');
+      const errorPopupMessage = document.getElementById('errorPopupMessage');
+      const errorPopupClose = document.getElementById('errorPopupClose');
+
+      function showErrorPopup(message) {
+        errorPopupMessage.textContent = message;
+        errorPopup.classList.add('show');
+        errorPopup.setAttribute('aria-hidden', 'false');
+      }
+
+      function hideErrorPopup() {
+        errorPopup.classList.remove('show');
+        errorPopup.setAttribute('aria-hidden', 'true');
+      }
+
+      errorPopupClose.addEventListener('click', hideErrorPopup);
+      errorPopup.addEventListener('click', (event) => {
+        if (event.target === errorPopup) {
+          hideErrorPopup();
+        }
+      });
+
+      const AGENCY_SERVICES = {
+        OWWA: [
+          'Membership Application',
+          'Inquire',
+          'Membership Renewal',
+          'Livelihood Assistance',
+          'Medical Assistance',
+          'Repatriation',
+          'Rebate',
+          'Scholarship',
+          'Others',
+        ],
+        DMW: ['OEC', 'E-Registration', 'InfoSheet', 'Others'],
+      };
+
+      const PSGC_BASE_URL = 'https://psgc.gitlab.io/api';
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function renderServicesForAgency(agency) {
+        const services = AGENCY_SERVICES[agency] || [];
+        servicesContainer.innerHTML = services
+          .map(
+            (service) => `
+              <label class="service-chip">
+                <input type="checkbox" value="${escapeHtml(service)}" class="service sr-only" />
+                <span class="block rounded-xl px-3 py-2 text-center text-sm font-medium">${escapeHtml(service)}</span>
+              </label>
+            `
+          )
+          .join('');
+      }
+
+      function fillSelect(selectElement, items, placeholderLabel) {
+        const options = [`<option value="">${placeholderLabel}</option>`];
+
+        items.forEach((item) => {
+          const localityTypeAttr = item.localityType ? ` data-locality-type="${escapeHtml(item.localityType)}"` : '';
+          options.push(
+            `<option value="${escapeHtml(item.name)}" data-code="${escapeHtml(item.code)}"${localityTypeAttr}>${escapeHtml(item.name)}</option>`
+          );
+        });
+
+        selectElement.innerHTML = options.join('');
+      }
+
+      async function fetchJson(url) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status}`);
+        }
+        return response.json();
+      }
+
+      function getSelectedCode(selectElement) {
+        const selected = selectElement.selectedOptions[0];
+        return selected ? selected.dataset.code || '' : '';
+      }
+
+      async function loadProvinces() {
+        try {
+          const provinces = await fetchJson(`${PSGC_BASE_URL}/provinces/`);
+          fillSelect(provinceSelect, provinces, 'Select province');
+          municipalitySelect.disabled = true;
+          barangaySelect.disabled = true;
+        } catch (_error) {
+          setStatus('Unable to load location data. Please refresh.', 'error');
+        }
+      }
+
+      async function loadMunicipalitiesAndCities(provinceCode) {
+        municipalitySelect.disabled = true;
+        barangaySelect.disabled = true;
+        fillSelect(municipalitySelect, [], 'Loading municipalities/cities...');
+        fillSelect(barangaySelect, [], 'Select barangay');
+
+        if (!provinceCode) {
+          fillSelect(municipalitySelect, [], 'Select municipality/city');
+          return;
+        }
+
+        try {
+          const [municipalities, cities] = await Promise.all([
+            fetchJson(`${PSGC_BASE_URL}/provinces/${encodeURIComponent(provinceCode)}/municipalities/`),
+            fetchJson(`${PSGC_BASE_URL}/provinces/${encodeURIComponent(provinceCode)}/cities/`),
+          ]);
+
+          const allLocalities = [
+            ...municipalities.map((item) => ({ ...item, localityType: 'municipality' })),
+            ...cities.map((item) => ({ ...item, localityType: 'city' })),
+          ].sort((a, b) => a.name.localeCompare(b.name));
+          fillSelect(municipalitySelect, allLocalities, 'Select municipality/city');
+          municipalitySelect.disabled = false;
+        } catch (_error) {
+          fillSelect(municipalitySelect, [], 'Unable to load municipalities/cities');
+          setStatus('Unable to load municipalities/cities.', 'error');
+        }
+      }
+
+      async function loadBarangays(localityCode) {
+        barangaySelect.disabled = true;
+        fillSelect(barangaySelect, [], 'Loading barangays...');
+
+        if (!localityCode) {
+          fillSelect(barangaySelect, [], 'Select barangay');
+          return;
+        }
+
+        try {
+          const selected = municipalitySelect.selectedOptions[0];
+          const localityType = selected ? selected.dataset.localityType || 'municipality' : 'municipality';
+          const endpoint =
+            localityType === 'city'
+              ? `${PSGC_BASE_URL}/cities/${encodeURIComponent(localityCode)}/barangays/`
+              : `${PSGC_BASE_URL}/municipalities/${encodeURIComponent(localityCode)}/barangays/`;
+
+          const allBarangays = await fetchJson(endpoint);
+          allBarangays.sort((a, b) => a.name.localeCompare(b.name));
+          fillSelect(barangaySelect, allBarangays, 'Select barangay');
+          barangaySelect.disabled = false;
+        } catch (_error) {
+          fillSelect(barangaySelect, [], 'Unable to load barangays');
+          setStatus('Unable to load barangays.', 'error');
+        }
+      }
+
+      function getSelectedServices() {
+        return [...document.querySelectorAll('.service:checked')].map((cb) => cb.value);
+      }
+
+      function setStatus(message, tone) {
+        const toneClass = {
+          success: 'mt-1 text-sm text-cyan-300',
+          error: 'mt-1 text-sm text-orange-300',
+          neutral: 'mt-1 text-sm text-gray-400',
+        };
+
+        status.textContent = message;
+        status.className = toneClass[tone] || toneClass.neutral;
+        if (tone === 'error') {
+          showErrorPopup(message);
+        }
+      }
+
+      function sendClientToAgency() {
+        const firstName = document.getElementById('firstName').value.trim();
+        const middleName = document.getElementById('middleName').value.trim();
+        const lastName = document.getElementById('lastName').value.trim();
+        const agency = agencySelect.value;
+        const gender = document.getElementById('gender').value;
+        const barangay = barangaySelect.value;
+        const municipality = municipalitySelect.value;
+        const province = provinceSelect.value;
+        const note = document.getElementById('kioskNote').value.trim();
+        const services = getSelectedServices();
+
+        if (!firstName || !lastName) {
+          setStatus('Please enter first and last name.', 'error');
+          return;
+        }
+
+        if (!municipality || !province) {
+          setStatus('Please complete municipality/city and province.', 'error');
+          return;
+        }
+
+        if (!gender) {
+          setStatus('Please select the client gender.', 'error');
+          return;
+        }
+
+        if (services.length === 0) {
+          setStatus('Please select at least one service.', 'error');
+          return;
+        }
+
+        const payload = {
+          first_name: firstName,
+          middle_name: middleName,
+          last_name: lastName,
+          barangay,
+          municipality,
+          province,
+          gender,
+          agency,
+          services,
+          note,
+          priority: document.getElementById('priorityCheck').checked,
+        };
+
+        socket.emit('submit_kiosk_note', payload);
+
+        setStatus(`Client routed to ${agency} successfully.`, 'success');
+
+        document.querySelectorAll('.service').forEach((cb) => (cb.checked = false));
+        document.getElementById('firstName').value = '';
+        document.getElementById('middleName').value = '';
+        document.getElementById('lastName').value = '';
+        provinceSelect.value = '';
+        fillSelect(municipalitySelect, [], 'Select municipality/city');
+        fillSelect(barangaySelect, [], 'Select barangay');
+        municipalitySelect.disabled = true;
+        barangaySelect.disabled = true;
+        document.getElementById('gender').value = '';
+        document.getElementById('kioskNote').value = '';
+        document.getElementById('priorityCheck').checked = false;
+      }
+
+      // Add event listener to update services when the agency dropdown changes
+      agencySelect.addEventListener('change', () => {
+        renderServicesForAgency(agencySelect.value);
+      });
+
+      provinceSelect.addEventListener('change', () => {
+        loadMunicipalitiesAndCities(getSelectedCode(provinceSelect));
+      });
+
+      municipalitySelect.addEventListener('change', () => {
+        loadBarangays(getSelectedCode(municipalitySelect));
+      });
+
+      submitButton.addEventListener('mouseenter', () => {
+        submitButton.style.transform = 'translateY(-1px)';
+        submitButton.style.background = 'var(--cyan-dark)';
+      });
+
+      submitButton.addEventListener('mouseleave', () => {
+        submitButton.style.transform = 'translateY(0)';
+        submitButton.style.background = 'var(--cyan)';
+      });
+
+      kioskLogoutBtn.addEventListener('click', async () => {
+        try {
+          await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+        } catch (_error) {
+          // Ignore logout request errors and continue local cleanup.
+        }
+
+        sessionStorage.removeItem('kioskAuth');
+        window.location.href = '/index.html';
+      });
+
+      document.getElementById('submitBtn').addEventListener('click', sendClientToAgency);
+      
+      // Initialize with the default selected dropdown value
+      renderServicesForAgency(agencySelect.value);
+      loadProvinces();
+    </script>
+</body>
+</html>

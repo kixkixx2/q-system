@@ -1,0 +1,19 @@
+{
+  "name": "local-queue-system",
+  "version": "1.0.0",
+  "description": "LAN-based queue management system for DMW and OWWA with real-time serving board, kiosk intake, and admin dashboard",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": ["queue", "management", "dmw", "owwa", "real-time"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3",
+    "sqlite3": "^6.0.1"
+  }
+}

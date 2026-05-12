@@ -1,0 +1,4 @@
+node_modules/
+queue_simple.db
+last_reset.txt
+backups/*.db

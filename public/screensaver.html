@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System Information</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/system-logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #0d1b2a;
+      --ocean: #0f3443;
+      --teal: #4a7c87;
+      --mist: #8bbcbe;
+      --silver: #c8d8d8;
+      --glow: #7ee8fa;
+      --ink: #e8f4f5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: 'Outfit', sans-serif;
+      color: var(--ink);
+      background: var(--navy);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Animated aurora background matching serving board */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(74, 124, 135, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 80% 85%, rgba(15, 52, 67, 0.8) 0%, transparent 55%),
+        linear-gradient(160deg, #0d1b2a 0%, #0f3443 60%, #0d1b2a 100%);
+      animation: auroraDrift 18s ease-in-out infinite alternate;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom,
+          transparent 0px,
+          transparent 3px,
+          rgba(0, 0, 0, 0.07) 3px,
+          rgba(0, 0, 0, 0.07) 4px);
+    }
+
+    @keyframes auroraDrift {
+      0% {
+        background-position: 0% 0%;
+        opacity: 1;
+      }
+
+      50% {
+        filter: hue-rotate(15deg) brightness(1.1);
+      }
+
+      100% {
+        background-position: 100% 100%;
+      }
+    }
+
+    header {
+      position: relative;
+      z-index: 1;
+      padding: 24px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(139, 188, 190, 0.2);
+      background: rgba(13, 27, 42, 0.6);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      border: 1px solid rgba(139, 188, 190, 0.3);
+      background: rgba(13, 27, 42, 0.8);
+      padding: 4px;
+      box-shadow: 0 0 14px rgba(126, 232, 250, 0.2);
+    }
+
+    .brand-title {
+      margin: 0;
+      font-family: 'Sora', sans-serif;
+      font-size: 1.5rem;
+      color: var(--silver);
+      letter-spacing: 1px;
+    }
+
+    .brand-sub {
+      margin: 2px 0 0;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--teal);
+      letter-spacing: 0.5px;
+    }
+
+    .clock {
+      font-family: 'Sora', sans-serif;
+      font-size: 2rem;
+      color: var(--glow);
+      text-shadow: 0 0 20px rgba(126, 232, 250, 0.6);
+    }
+
+    /* Carousel Container */
+    .carousel {
+      position: relative;
+      flex: 1;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateY(20px) scale(0.98);
+      pointer-events: none;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .card {
+      width: 100%;
+      max-width: 1200px;
+      background: linear-gradient(145deg, rgba(15, 52, 67, 0.75) 0%, rgba(13, 27, 42, 0.85) 100%);
+      border: 1px solid rgba(139, 188, 190, 0.25);
+      border-radius: 24px;
+      padding: 40px 60px;
+      box-shadow: 0 0 0 1px rgba(126, 232, 250, 0.08), 0 20px 40px rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      text-align: center;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 0 0 1px rgba(126, 232, 250, 0.15), 0 30px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .agency-icon {
+      width: 90px;
+      height: 90px;
+      object-fit: contain;
+      border-radius: 20px;
+      background: rgba(13, 27, 42, 0.8);
+      border: 1px solid rgba(139, 188, 190, 0.25);
+      padding: 8px;
+      box-shadow: 0 0 20px rgba(126, 232, 250, 0.15);
+      margin: 0 auto 20px;
+    }
+
+    .slide-title {
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(2.5rem, 4vw, 4rem);
+      font-weight: 800;
+      color: var(--glow);
+      text-shadow: 0 0 30px rgba(126, 232, 250, 0.5);
+      margin: 0 0 30px;
+      letter-spacing: 2px;
+    }
+
+    .req-grid {
+      display: grid;
+      gap: 16px;
+      text-align: left;
+    }
+
+    .req-item {
+      background: rgba(74, 124, 135, 0.12);
+      border: 1px solid rgba(139, 188, 190, 0.18);
+      border-radius: 16px;
+      padding: 24px 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: background 0.3s, transform 0.3s, border-color 0.3s;
+    }
+
+    .req-item:hover {
+      background: rgba(74, 124, 135, 0.2);
+      border-color: rgba(126, 232, 250, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .req-name {
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+      font-weight: 800;
+      color: var(--silver);
+    }
+
+    .req-desc {
+      font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+      color: var(--mist);
+      font-weight: 600;
+    }
+
+    .req-highlight {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .contact-title {
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(3rem, 6vw, 5rem);
+      color: var(--silver);
+      margin-bottom: 20px;
+    }
+
+    .contact-number {
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(4rem, 10vw, 8rem);
+      font-weight: 800;
+      color: var(--glow);
+      text-shadow: 0 0 40px rgba(126, 232, 250, 0.6);
+      letter-spacing: 4px;
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: rgba(13, 27, 42, 0.8);
+      z-index: 10;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: var(--glow);
+      box-shadow: 0 0 10px var(--glow);
+      width: 0%;
+      transition: width linear;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="brand">
+      <img src="/assets/system-logo.svg" alt="Logo" class="brand-logo" />
+      <div>
+        <h1 class="brand-title">PUBLIC SERVICE ADVISORY</h1>
+        <p class="brand-sub">Important Information & Requirements</p>
+      </div>
+    </div>
+    <div class="clock" id="liveClock">--:--:--</div>
+  </header>
+
+  <main class="carousel">
+
+    <!-- Slide 1: DMW Hotlines -->
+    <div class="slide active">
+      <div class="card">
+        <img src="/assets/dmw-logo.svg" alt="DMW" class="agency-icon" />
+        <h2 class="slide-title">DMW Region 2 Hotlines</h2>
+        <div class="req-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="req-item">
+            <span class="req-name">OSSCO</span>
+            <span class="req-desc" style="font-size: clamp(1.4rem, 3vw, 2rem);"><span class="req-highlight">0951 160 7907</span></span>
+          </div>
+          <div class="req-item">
+            <span class="req-name">MWPTD</span>
+            <span class="req-desc" style="font-size: clamp(1.4rem, 3vw, 2rem);"><span class="req-highlight">0935 147 4185</span></span>
+          </div>
+          <div class="req-item">
+            <span class="req-name">MWPSD</span>
+            <span class="req-desc" style="font-size: clamp(1.4rem, 3vw, 2rem);"><span class="req-highlight">0968 778 9463</span></span>
+          </div>
+          <div class="req-item">
+            <span class="req-name">WRSD</span>
+            <span class="req-desc" style="font-size: clamp(1.4rem, 3vw, 2rem);"><span class="req-highlight">0936 723 7093</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2: OWWA -->
+    <div class="slide">
+      <div class="card">
+        <img src="/assets/owwa-logo.png" alt="OWWA" class="agency-icon" />
+        <h2 class="slide-title">OWWA Information</h2>
+        <div class="req-grid" style="grid-template-columns: 1fr;">
+          <div class="req-item" style="text-align: center; padding: 40px; justify-content: center;">
+            <span class="req-name" style="font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 16px;">Membership
+              Payment</span>
+            <span class="req-desc" style="font-size: clamp(1.4rem, 3vw, 2rem); color: var(--silver);">Schedule: <span
+                class="req-highlight">Every Monday and Tuesday</span></span>
+            <span class="req-desc" style="font-size: clamp(1.4rem, 3vw, 2rem); margin-top: 16px;">Amount (APRIL): <span
+                style="color: var(--glow); font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800; font-family: 'Sora', sans-serif;">₱
+                1,507.25</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: Contact -->
+    <div class="slide">
+      <div class="card"
+        style="padding: 60px 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px;">
+        <h2 class="contact-title">Contact Numbers</h2>
+        <div class="contact-number">0917 165 9766</div>
+        <p style="color: var(--mist); font-size: clamp(1.4rem, 3vw, 2rem); margin-top: 40px; font-weight: 600;">Please
+          contact us for further inquiries.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <div class="progress-container">
+    <div class="progress-bar" id="progressBar"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // --- Clock ---
+    const liveClock = document.getElementById('liveClock');
+    setInterval(() => {
+      liveClock.textContent = new Date().toLocaleTimeString();
+    }, 1000);
+    liveClock.textContent = new Date().toLocaleTimeString();
+
+    // --- Carousel Logic ---
+    const slides = document.querySelectorAll('.slide');
+    const progressBar = document.getElementById('progressBar');
+    let currentSlide = 0;
+    const slideDuration = 10000; // 10 seconds per slide
+
+    function nextSlide() {
+      slides[currentSlide].classList.remove('active');
+      currentSlide = (currentSlide + 1) % slides.length;
+      slides[currentSlide].classList.add('active');
+
+      // Reset progress bar animation
+      progressBar.style.transition = 'none';
+      progressBar.style.width = '0%';
+      // Force reflow
+      void progressBar.offsetWidth;
+      progressBar.style.transition = `width ${slideDuration}ms linear`;
+      progressBar.style.width = '100%';
+    }
+
+    // Start progress bar initially
+    progressBar.style.transition = `width ${slideDuration}ms linear`;
+    progressBar.style.width = '100%';
+
+    setInterval(nextSlide, slideDuration);
+
+    // --- Auto Wake on Queue Activity or Click ---
+    const socket = io();
+
+    function wakeUpAndReturn() {
+      window.location.replace('/serving-board.html');
+    }
+
+    // Allow user to manually wake the screen by clicking anywhere
+    document.body.addEventListener('click', wakeUpAndReturn);
+
+    // Listen to all queue events
+    socket.on('dmw_incoming_client', wakeUpAndReturn);
+    socket.on('owwa_incoming_client', wakeUpAndReturn);
+    socket.on('dmw_client_updated', wakeUpAndReturn);
+    socket.on('owwa_client_updated', wakeUpAndReturn);
+
+    // Periodically check the API just in case a socket event was missed
+    setInterval(async () => {
+      try {
+        const res = await fetch('/api/display/next');
+        const data = await res.json();
+
+        const hasDmw = data.dmw && data.dmw.length > 0;
+        const hasOwwa = data.owwa && data.owwa.length > 0;
+
+        if (hasDmw || hasOwwa) {
+          wakeUpAndReturn();
+        }
+      } catch (e) { }
+    }, 5000);
+
+  </script>
+</body>
+
+</html>

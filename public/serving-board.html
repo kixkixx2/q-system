@@ -1,0 +1,1014 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Now Serving Board</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/system-logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #0d1b2a;
+      --ocean: #0f3443;
+      --teal: #4a7c87;
+      --mist: #8bbcbe;
+      --silver: #c8d8d8;
+      --glow: #7ee8fa;
+      --ink: #e8f4f5;
+      --ok: #4ae3b5;
+      --danger: #ff6b6b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: 'Outfit', sans-serif;
+      color: var(--ink);
+      background: var(--navy);
+      overflow: hidden;
+    }
+
+    /* Animated aurora background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(74, 124, 135, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 50% at 80% 85%, rgba(15, 52, 67, 0.8) 0%, transparent 55%),
+        linear-gradient(160deg, #0d1b2a 0%, #0f3443 60%, #0d1b2a 100%);
+      animation: auroraDrift 18s ease-in-out infinite alternate;
+    }
+
+    /* Scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(to bottom,
+          transparent 0px,
+          transparent 3px,
+          rgba(0, 0, 0, 0.07) 3px,
+          rgba(0, 0, 0, 0.07) 4px);
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(1320px, 96vw);
+      height: calc(100vh - 16px);
+      margin: 8px auto;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 8px;
+      animation: riseIn 700ms ease-out;
+    }
+
+    .hero {
+      border: 1px solid rgba(139, 188, 190, 0.25);
+      border-radius: 16px;
+      background: rgba(15, 52, 67, 0.7);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 0 1px rgba(126, 232, 250, 0.08), 0 10px 20px rgba(0, 0, 0, 0.4);
+      padding: 10px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(139, 188, 190, 0.3);
+      background: rgba(13, 27, 42, 0.8);
+      padding: 3px;
+      box-shadow: 0 0 14px rgba(126, 232, 250, 0.2);
+    }
+
+    .brand-title {
+      margin: 0;
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(1.1rem, 2.6vw, 1.75rem);
+      color: var(--silver);
+      letter-spacing: 1px;
+    }
+
+    .brand-sub {
+      margin: 3px 0 0;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--teal);
+      letter-spacing: 0.5px;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .chip {
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      border: 1px solid rgba(139, 188, 190, 0.3);
+      color: var(--mist);
+      background: rgba(74, 124, 135, 0.2);
+    }
+
+    .clock {
+      min-width: 170px;
+      text-align: right;
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(1.3rem, 4vw, 2.4rem);
+      color: var(--glow);
+      text-shadow: 0 0 20px rgba(126, 232, 250, 0.6);
+      animation: clockPulse 2s ease-in-out infinite;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .ticket {
+      position: relative;
+      border-radius: 16px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 14px;
+      border: 1px solid rgba(139, 188, 190, 0.2);
+      box-shadow: 0 0 0 1px rgba(126, 232, 250, 0.06), 0 12px 24px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      transform: translateZ(0);
+      transition: box-shadow 0.4s ease;
+    }
+
+    /* Hide scrollbar but keep scrollable */
+    .ticket::-webkit-scrollbar {
+      display: none;
+    }
+
+    .ticket {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .ticket.dmw {
+      background: linear-gradient(145deg, rgba(15, 52, 67, 0.95) 0%, rgba(13, 27, 42, 0.98) 100%);
+    }
+
+    .ticket.owwa {
+      background: linear-gradient(145deg, rgba(13, 27, 42, 0.98) 0%, rgba(15, 52, 67, 0.95) 100%);
+    }
+
+    /* Animated top-border glow */
+    .ticket::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--glow) 50%, transparent 100%);
+      animation: borderSweep 4s ease-in-out infinite;
+    }
+
+    /* Decorative orb */
+    .ticket::after {
+      content: '';
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 280px;
+      height: 280px;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(74, 124, 135, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .ticket-head {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .agency {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .agency img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      border-radius: 10px;
+      background: rgba(13, 27, 42, 0.8);
+      border: 1px solid rgba(139, 188, 190, 0.25);
+      padding: 3px;
+      box-shadow: 0 0 10px rgba(126, 232, 250, 0.15);
+    }
+
+    .agency strong {
+      display: block;
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(1.2rem, 2.8vw, 1.9rem);
+      color: var(--silver);
+      text-shadow: 0 0 20px rgba(126, 232, 250, 0.4);
+    }
+
+    .agency span {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--teal);
+    }
+
+    .status {
+      font-size: 0.76rem;
+      font-weight: 800;
+      border-radius: 999px;
+      padding: 7px 14px;
+      border: 1px solid rgba(139, 188, 190, 0.3);
+      background: rgba(74, 124, 135, 0.2);
+      color: var(--mist);
+      letter-spacing: 1px;
+    }
+
+    .status.up {
+      border-color: rgba(74, 227, 181, 0.5);
+      background: rgba(74, 227, 181, 0.15);
+      color: var(--ok);
+      box-shadow: 0 0 12px rgba(74, 227, 181, 0.2);
+      animation: livePulse 2s ease-in-out infinite;
+    }
+
+    .status.down {
+      border-color: rgba(255, 107, 107, 0.4);
+      background: rgba(255, 107, 107, 0.1);
+      color: var(--danger);
+    }
+
+    .ticket-body {
+      position: relative;
+      z-index: 1;
+      margin-top: 14px;
+    }
+
+    .label {
+      margin: 0;
+      font-size: 0.82rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: 800;
+      color: var(--teal);
+    }
+
+    .number {
+      margin: 6px 0 0;
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(3.4rem, 11vw, 8.8rem);
+      line-height: 0.95;
+      letter-spacing: 1.2px;
+      color: var(--glow);
+      text-shadow: 0 0 40px rgba(126, 232, 250, 0.7), 0 8px 24px rgba(0, 0, 0, 0.5);
+      transition: transform 260ms ease, opacity 260ms ease;
+    }
+
+    .empty-serving {
+      margin-top: 14px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: rgba(139, 188, 190, 0.4);
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .serving-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(74, 124, 135, 0.12);
+      border: 1px solid rgba(139, 188, 190, 0.18);
+      transition: box-shadow 0.3s ease;
+    }
+
+    .serving-row+.serving-row {
+      margin-top: 6px;
+    }
+
+    .serving-row:hover {
+      box-shadow: 0 0 0 1px rgba(126, 232, 250, 0.15);
+    }
+
+    .serving-table {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 60px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: rgba(126, 232, 250, 0.08);
+      border: 1px solid rgba(126, 232, 250, 0.2);
+      box-shadow: 0 0 10px rgba(126, 232, 250, 0.1);
+    }
+
+    .table-label {
+      font-family: 'Sora', sans-serif;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--teal);
+    }
+
+    .table-number {
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(1.4rem, 3.5vw, 2.4rem);
+      font-weight: 800;
+      line-height: 1;
+      color: var(--glow);
+      text-shadow: 0 0 14px rgba(126, 232, 250, 0.5);
+    }
+
+    .serving-info {
+      flex: 1;
+    }
+
+    .serving-ticket {
+      margin: 0;
+      font-family: 'Sora', sans-serif;
+      font-size: clamp(1.8rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 1px;
+      color: var(--glow);
+      text-shadow: 0 0 20px rgba(126, 232, 250, 0.5), 0 3px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .serving-name {
+      margin: 4px 0 0;
+      font-size: clamp(1rem, 2.5vw, 1.8rem);
+      font-weight: 800;
+      color: var(--silver);
+    }
+
+    .mt-8 {
+      margin-top: 16px;
+    }
+
+    .waiting-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .waiting-card {
+      background: rgba(15, 52, 67, 0.5);
+      border: 1px solid rgba(139, 188, 190, 0.15);
+      border-radius: 10px;
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
+    }
+
+    .waiting-card:hover {
+      border-color: rgba(126, 232, 250, 0.3);
+    }
+
+    .waiting-ticket {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--mist);
+    }
+
+    .waiting-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(200, 216, 216, 0.65);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Priority indicators on serving board */
+    .priority-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #e8a838, #f0c060);
+      color: #5a3800;
+      font-family: 'Sora', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(232, 168, 56, 0.35);
+      animation: prioGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes prioGlow {
+
+      0%,
+      100% {
+        box-shadow: 0 2px 8px rgba(232, 168, 56, 0.35);
+      }
+
+      50% {
+        box-shadow: 0 2px 16px rgba(232, 168, 56, 0.6);
+      }
+    }
+
+    .waiting-card.priority-waiting {
+      border-color: rgba(232, 168, 56, 0.4) !important;
+      background: rgba(232, 168, 56, 0.08);
+    }
+
+    /* -- Animations ------------------------------------ */
+    .flash {
+      animation: flash 700ms cubic-bezier(0.2, 0.85, 0.35, 1);
+    }
+
+    .slide {
+      animation: slideIn 450ms ease-out;
+    }
+
+    @keyframes auroraDrift {
+      0% {
+        background-position: 0% 0%;
+        opacity: 1;
+      }
+
+      50% {
+        filter: hue-rotate(15deg) brightness(1.1);
+      }
+
+      100% {
+        background-position: 100% 100%;
+      }
+    }
+
+    @keyframes riseIn {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes flash {
+      0% {
+        transform: scale(0.88);
+        opacity: 0.3;
+        filter: brightness(2);
+      }
+
+      40% {
+        transform: scale(1.07);
+        opacity: 1;
+        filter: brightness(1.4);
+      }
+
+      70% {
+        transform: scale(0.98);
+        filter: brightness(1.1);
+      }
+
+      100% {
+        transform: scale(1);
+        filter: brightness(1);
+      }
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-16px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes borderSweep {
+      0% {
+        opacity: 0;
+        transform: translateX(-100%);
+      }
+
+      50% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+    }
+
+    @keyframes livePulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 8px rgba(74, 227, 181, 0.2);
+      }
+
+      50% {
+        box-shadow: 0 0 20px rgba(74, 227, 181, 0.5);
+      }
+    }
+
+    @keyframes clockPulse {
+
+      0%,
+      100% {
+        text-shadow: 0 0 20px rgba(126, 232, 250, 0.6);
+      }
+
+      50% {
+        text-shadow: 0 0 40px rgba(126, 232, 250, 0.9);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 8px 12px;
+      }
+
+      .clock {
+        min-width: 0;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="brand">
+        <img src="/assets/system-logo.svg" alt="Queue system logo" class="brand-logo" />
+        <div>
+          <h1 class="brand-title">PUBLIC SERVICE LIVE BOARD</h1>
+          <p class="brand-sub">Now Serving: DMW and OWWA</p>
+        </div>
+      </div>
+      <div class="hero-meta">
+        <span class="chip" id="todayDate">--</span>
+        <span class="clock" id="liveClock">--:--:--</span>
+      </div>
+    </section>
+
+    <section class="layout">
+      <article class="ticket dmw">
+        <header class="ticket-head">
+          <div class="agency">
+            <img src="/assets/dmw-logo.svg" alt="DMW logo" />
+            <div>
+              <strong>DMW</strong>
+              <span>Department Desk</span>
+            </div>
+          </div>
+          <span id="dmwStatus" class="status up">LIVE</span>
+        </header>
+        <div id="dmwBody" class="ticket-body">
+          <p class="label">Now Serving</p>
+          <div class="empty-serving">No active service</div>
+        </div>
+      </article>
+
+      <article class="ticket owwa">
+        <header class="ticket-head">
+          <div class="agency">
+            <img src="/assets/owwa-logo.png" alt="OWWA logo" />
+            <div>
+              <strong>OWWA</strong>
+              <span>Welfare Desk</span>
+            </div>
+          </div>
+          <span id="owwaStatus" class="status up">LIVE</span>
+        </header>
+        <div id="owwaBody" class="ticket-body">
+          <p class="label">Now Serving</p>
+          <div class="empty-serving">No active service</div>
+        </div>
+      </article>
+    </section>
+
+
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const liveClock = document.getElementById('liveClock');
+    const todayDate = document.getElementById('todayDate');
+
+    const dmwBody = document.getElementById('dmwBody');
+    const dmwStatus = document.getElementById('dmwStatus');
+
+    const owwaBody = document.getElementById('owwaBody');
+    const owwaStatus = document.getElementById('owwaStatus');
+
+    // Track previous state to trigger animations only on change
+    let prevDmwKey = '';
+    let prevOwwaKey = '';
+
+    function updateDateTime() {
+      const now = new Date();
+      liveClock.textContent = now.toLocaleTimeString();
+      todayDate.textContent = now.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    }
+
+    function getTableNumber(officer) {
+      // Extract the trailing number from the username: DMW1→1, DMW2→2, owwa1→1, owwa2→2
+      const match = String(officer || '').match(/(\d+)$/);
+      return match ? match[1] : '—';
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function renderAgencyBoard(tickets, bodyEl, statusEl, prevKeyRef) {
+      if (!Array.isArray(tickets) || tickets.length === 0) {
+        const newKey = 'empty';
+        bodyEl.innerHTML = `
+            <p class="label">Now Serving</p>
+            <div class="empty-serving">No active service</div>
+          `;
+        statusEl.textContent = 'NO CALL';
+        statusEl.classList.add('down');
+        statusEl.classList.remove('up');
+        return newKey;
+      }
+
+      // Build a snapshot key to detect changes
+      const newKey = tickets.map((t) => `${t.ticket_id}:${t.assigned_to || 'wait'}`).join(',');
+      const changed = prevKeyRef !== newKey && prevKeyRef !== '';
+
+      const assigned = tickets.filter(t => t.assigned_to && t.assigned_to !== '');
+      const unassigned = tickets.filter(t => !t.assigned_to || t.assigned_to === '');
+
+      let html = '<p class="label">Now Serving</p>';
+
+      if (assigned.length === 0) {
+        html += '<div class="empty-serving">No active service</div>';
+      } else {
+        assigned.forEach((ticket) => {
+          const tableNum = getTableNumber(ticket.assigned_to);
+          const displayName = escapeHtml(
+            ticket.client_identifier ||
+            [ticket.first_name, ticket.middle_name, ticket.last_name].filter(Boolean).join(' ').trim()
+          );
+          const animClass = changed ? 'serving-row flash slide' : 'serving-row';
+          const prioTag = ticket.priority ? '<span class="priority-indicator">PRIORITY</span>' : '';
+
+          html += `
+              <div class="${animClass}">
+                <div class="serving-table">
+                  <span class="table-label">TABLE</span>
+                  <span class="table-number">${escapeHtml(tableNum)}</span>
+                </div>
+                <div class="serving-info">
+                  <p class="serving-ticket">${ticket.display_ticket || '#' + ticket.ticket_id} ${prioTag}</p>
+                  <p class="serving-name">${displayName || 'Queue Client'}</p>
+                </div>
+              </div>
+            `;
+        });
+      }
+
+      if (unassigned.length > 0) {
+        html += '<p class="label mt-8">Up Next / Waiting</p><div class="waiting-grid">';
+        unassigned.forEach(ticket => {
+          const displayName = escapeHtml(
+            ticket.client_identifier ||
+            [ticket.first_name, ticket.middle_name, ticket.last_name].filter(Boolean).join(' ').trim()
+          );
+          const prioClass = ticket.priority ? ' priority-waiting' : '';
+          const prioIcon = ticket.priority ? ' ★' : '';
+          html += `
+              <div class="waiting-card${prioClass}">
+                <span class="waiting-ticket">${ticket.display_ticket || '#' + ticket.ticket_id}${prioIcon}</span>
+                <span class="waiting-name">${displayName || 'Queue Client'}</span>
+              </div>
+            `;
+        });
+        html += '</div>';
+      }
+
+      bodyEl.innerHTML = html;
+      statusEl.textContent = 'LIVE';
+      statusEl.classList.remove('down');
+      statusEl.classList.add('up');
+
+      return newKey;
+    }
+
+    // ── Idle Timer → Screensaver ──────────────────────────────────
+    const IDLE_TIMEOUT_MS = 30000; // 30 seconds of empty queues → screensaver
+    let idleTimer = null;
+
+    function resetIdleTimer() {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+
+    function startIdleTimer() {
+      if (idleTimer) return; // already ticking
+      idleTimer = setTimeout(() => {
+        window.location.replace('/screensaver.html');
+      }, IDLE_TIMEOUT_MS);
+    }
+
+    function checkIdleState(dmwTickets, owwaTickets) {
+      const dmwEmpty = !Array.isArray(dmwTickets) || dmwTickets.length === 0;
+      const owwaEmpty = !Array.isArray(owwaTickets) || owwaTickets.length === 0;
+      if (dmwEmpty && owwaEmpty) {
+        startIdleTimer();
+      } else {
+        resetIdleTimer();
+      }
+    }
+
+    async function loadBoard() {
+      try {
+        const response = await fetch('/api/display/next', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error('Failed to load board');
+        }
+
+        const payload = await response.json();
+        prevDmwKey = renderAgencyBoard(payload.dmw, dmwBody, dmwStatus, prevDmwKey);
+        prevOwwaKey = renderAgencyBoard(payload.owwa, owwaBody, owwaStatus, prevOwwaKey);
+
+        // Check if both queues are empty → start idle countdown
+        checkIdleState(payload.dmw, payload.owwa);
+
+      } catch (_error) {
+        dmwStatus.textContent = 'OFFLINE';
+        owwaStatus.textContent = 'OFFLINE';
+        dmwStatus.classList.add('down');
+        owwaStatus.classList.add('down');
+        dmwStatus.classList.remove('up');
+        owwaStatus.classList.remove('up');
+      }
+    }
+
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    loadBoard();
+    // Keep a fallback polling roughly every 15s for self-healing
+    setInterval(loadBoard, 15000);
+
+    // Real-time updates via WebSockets for instant response
+    const socket = io();
+
+    // Admin force-disconnect handler
+    socket.on('force_disconnect', (data) => {
+      const msg = (data && data.reason) ? data.reason : 'You have been disconnected by the administrator.';
+      socket.disconnect();
+      sessionStorage.clear();
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(47,39,64,0.96);display:grid;place-items:center;';
+      overlay.innerHTML = `
+        <div style="text-align:center;color:#f2eae0;font-family:Sora,sans-serif;padding:32px;max-width:420px;">
+          <div style="font-size:3rem;margin-bottom:16px;">🔌</div>
+          <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:10px;">Disconnected</h2>
+          <p style="font-size:1rem;opacity:0.8;margin-bottom:24px;">${msg}</p>
+          <p style="font-size:0.85rem;opacity:0.55;">Redirecting to login in 3 seconds…</p>
+        </div>`;
+      document.body.appendChild(overlay);
+      setTimeout(() => { window.location.replace('/index.html'); }, 3000);
+    });
+
+    // Admin force-logout: redirect immediately when admin kicks this device
+    socket.on('force_logout', function (data) {
+      alert('\u26a0\ufe0f ' + ((data && data.reason) || 'You have been logged out by an administrator.'));
+      fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(function () { });
+      sessionStorage.clear();
+      window.location.replace('/index.html');
+    });
+
+    let audioCtx = null;
+    function initAudio() {
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+    // Listen to multiple interactions to ensure AudioContext awakens
+    document.body.addEventListener('click', initAudio);
+    document.body.addEventListener('touchstart', initAudio);
+
+
+
+    function playDmwSound() {
+      try {
+        if (!audioCtx) initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+
+        const now = audioCtx.currentTime;
+        osc.frequency.setValueAtTime(880, now); // A5
+        osc.frequency.setValueAtTime(1046.50, now + 0.15); // C6
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.5, now + 0.05);
+        gain.gain.setValueAtTime(0.5, now + 0.15);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+        osc.start(now);
+        osc.stop(now + 0.5);
+      } catch (e) {
+        console.log('DMW sound failed:', e);
+      }
+    }
+
+    function playOwwaSound() {
+      try {
+        if (!audioCtx) initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'sine';
+
+        const now = audioCtx.currentTime;
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.15); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.3); // G5
+
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.5, now + 0.05);
+        gain.gain.setValueAtTime(0.5, now + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+        osc.start(now);
+        osc.stop(now + 0.7);
+      } catch (e) {
+        console.log('OWWA sound failed:', e);
+      }
+    }
+
+    const audioQueue = [];
+    let isPlayingAudio = false;
+
+    function playNextAudio() {
+      if (audioQueue.length === 0) {
+        isPlayingAudio = false;
+        return;
+      }
+      isPlayingAudio = true;
+      const audioUrl = audioQueue.shift();
+      const audio = new Audio(audioUrl);
+
+      // Speed up Google Translate slightly as it can be slow
+      audio.playbackRate = 1.05;
+
+      audio.onended = () => {
+        // Wait 0.8 seconds between calls
+        setTimeout(playNextAudio, 800);
+      };
+
+      audio.onerror = (e) => {
+        console.error("Audio failed to play", e);
+        setTimeout(playNextAudio, 300);
+      };
+
+      audio.play().catch(e => {
+        console.error("Failed to play audio. Did user interact?", e);
+        setTimeout(playNextAudio, 300);
+      });
+    }
+
+    function announceTicket(ticketNumberStr, assignedTo, agency) {
+      try {
+        // Strip out any dashes/hyphens
+        const cleanTicket = String(ticketNumberStr).replace(/[^a-zA-Z0-9]/g, '');
+        // Split with periods for extreme clarity in Google TTS: "D. 0. 0. 1"
+        const pronouncedTicket = cleanTicket.split('').join('. ');
+
+        const match = String(assignedTo || '').match(/(\d+)$/);
+        const tableNum = match ? match[1] : '';
+        const destination = tableNum ? `table ${tableNum}` : 'counter';
+
+        // Format: "Ticket D. 0. 0. 1. please proceed to D M W table 2."
+        const phrase = `Ticket ${pronouncedTicket}. Please proceed to ${agency} ${destination}.`;
+
+        // Encode text and route through our secure Node.js proxy!
+        const url = `/api/tts?text=${encodeURIComponent(phrase)}`;
+
+        // Queue it up twice to be spoken back-to-back safely
+        audioQueue.push(url);
+        audioQueue.push(url);
+
+        if (!isPlayingAudio) {
+          playNextAudio();
+        }
+      } catch (e) {
+        console.error('TTS failed:', e);
+      }
+    }
+
+    function instantUpdate() {
+      resetIdleTimer();
+      loadBoard();
+    }
+
+    socket.on('dmw_incoming_client', (data) => {
+      instantUpdate();
+      playDmwSound();
+    });
+    socket.on('owwa_incoming_client', (data) => {
+      instantUpdate();
+      playOwwaSound();
+    });
+    socket.on('dmw_client_updated', (data) => {
+      instantUpdate();
+      if (data && data.action === 'claimed') {
+        const tix = data.display_ticket || `D-${data.ticket_id}`;
+        // D. M. W. looks weird but Google Translates reads it beautifully as "D M W".
+        announceTicket(tix, data.assigned_to, 'D. M. W.');
+      }
+    });
+    socket.on('owwa_client_updated', (data) => {
+      instantUpdate();
+      if (data && data.action === 'claimed') {
+        const tix = data.display_ticket || `O-${data.ticket_id}`;
+        // Using Owa explicitly bypasses pronunciation bugs for Google TTS!
+        announceTicket(tix, data.assigned_to, 'Owa');
+      }
+    });
+    socket.on('queue_reset', instantUpdate);
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,804 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/system-logo.svg" />
+    <script>
+      (async function enforceAdminAuth() {
+        try {
+          const response = await fetch('/api/auth/session', {
+            credentials: 'same-origin',
+            cache: 'no-store',
+          });
+          if (!response.ok) throw new Error('Unauthorized');
+          const auth = await response.json();
+          if (!auth.authenticated || auth.role !== 'admin') throw new Error('Not admin');
+        } catch (_error) {
+          window.location.replace('/index.html');
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --bg-a: #f2eae0;
+        --bg-b: #b4d3d9;
+        --surface: #f2eae0;
+        --surface-soft: #b4d3d9;
+        --surface-border: #bda6ce;
+        --text-main: #2f2740;
+        --text-soft: #5f5674;
+        --peach: #9b8ec7;
+        --cyan: #9b8ec7;
+        --green: #0f845a;
+        --red: #c73838;
+      }
+
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: radial-gradient(circle at 10% 16%, #f8f2ea 0%, transparent 40%),
+          radial-gradient(circle at 86% 12%, #d7e9ee 0%, transparent 40%),
+          linear-gradient(135deg, var(--bg-a) 0%, var(--bg-b) 100%);
+      }
+
+      h1, h2, h3, button, label { font-family: 'Sora', sans-serif; }
+
+      .panel {
+        border: 1px solid var(--surface-border);
+        background: linear-gradient(180deg, #f6efe7 0%, var(--surface) 100%);
+        box-shadow: 0 18px 34px rgba(72, 62, 98, 0.18);
+      }
+
+      .stat-card {
+        border: 1px solid var(--surface-border);
+        background: linear-gradient(145deg, #f6efe7, #ece2f2);
+        border-radius: 20px;
+        padding: 18px 22px;
+        box-shadow: 0 8px 20px rgba(72, 62, 98, 0.12);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(72, 62, 98, 0.2);
+      }
+
+      .stat-num {
+        font-family: 'Sora', sans-serif;
+        font-size: clamp(2rem, 5vw, 3.2rem);
+        font-weight: 800;
+        line-height: 1;
+        color: var(--text-main);
+      }
+
+      .stat-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
+        color: var(--text-soft);
+        margin-top: 4px;
+      }
+
+      .queue-card {
+        border: 1px solid var(--surface-border);
+        background: #f7f1e8;
+        border-radius: 16px;
+        padding: 14px 16px;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        animation: riseIn 350ms ease both;
+      }
+
+      .queue-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 22px rgba(1, 8, 20, 0.22);
+      }
+
+      .queue-card.new-flash {
+        animation: riseIn 350ms ease both, flashGlow 1400ms ease;
+      }
+
+      .activity-row {
+        border-bottom: 1px solid rgba(189, 166, 206, 0.25);
+        padding: 10px 0;
+        animation: riseIn 280ms ease both;
+      }
+
+      .activity-row:last-child { border-bottom: none; }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 3px 10px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+      }
+
+      .badge-dmw  { background: #d7e9ee; color: #1a5f70; border: 1px solid #9bced9; }
+      .badge-owwa { background: #ebe3f0; color: #4f4268; border: 1px solid #bda6ce; }
+      .badge-waiting { background: #ebe3f0; color: #4f4268; border: 1px solid #bda6ce; }
+      .badge-done    { background: #e5f0ea; color: #2f5f4a; border: 1px solid #9fc4b2; }
+      .badge-priority {
+        background: linear-gradient(135deg, #e8a838, #f0c060);
+        color: #5a3800; border: 1px solid #d4952e;
+      }
+
+      .section-title {
+        font-family: 'Sora', sans-serif;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        color: var(--text-main);
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .live-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #0f845a;
+        animation: pulse 2s ease infinite;
+      }
+
+      button, a { cursor: pointer; transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease; }
+      button:hover, a:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 8px 18px rgba(5, 15, 30, 0.22); }
+
+      .popup-backdrop {
+        position: fixed; inset: 0; background: rgba(47, 39, 64, 0.18);
+        display: grid; place-items: center; opacity: 0; pointer-events: none;
+        transition: opacity 0.16s ease; z-index: 50;
+      }
+      .popup-backdrop.show { opacity: 1; pointer-events: auto; }
+      .popup-card {
+        width: min(92vw, 360px); border-radius: 16px;
+        border: 1px solid var(--surface-border);
+        background: linear-gradient(180deg, #f6efe6 0%, #ebe0f0 100%);
+        box-shadow: 0 14px 28px rgba(72, 62, 98, 0.2); padding: 16px; color: #3d3253;
+      }
+      .popup-title { font-family: 'Sora', sans-serif; font-weight: 700; margin-bottom: 6px; }
+      .popup-message { font-size: 0.94rem; color: #4f4268; }
+
+      @keyframes riseIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes flashGlow {
+        0%   { box-shadow: 0 0 0 rgba(155, 142, 199, 0); }
+        30%  { box-shadow: 0 0 0 4px rgba(155, 142, 199, 0.32); }
+        100% { box-shadow: 0 0 0 rgba(155, 142, 199, 0); }
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: 0.5; transform: scale(1.4); }
+      }
+
+      .empty-box {
+        border: 1px dashed var(--surface-border);
+        border-radius: 14px;
+        padding: 28px;
+        text-align: center;
+        color: var(--text-soft);
+        font-size: 0.9rem;
+        background: rgba(242, 234, 224, 0.5);
+      }
+
+      .tab-btn {
+        padding: 7px 16px;
+        border-radius: 10px;
+        font-family: 'Sora', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 700;
+        border: 1px solid var(--surface-border);
+        background: #ebe3f0;
+        color: #4f4268;
+        transition: background 0.18s, color 0.18s;
+      }
+      .tab-btn.active { background: #9b8ec7; color: #241c35; border-color: #9b8ec7; }
+
+      /* Device cards */
+      .device-card {
+        border: 1px solid var(--surface-border);
+        background: linear-gradient(145deg, #f6efe7, #ece2f2);
+        border-radius: 16px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        animation: riseIn 300ms ease both;
+        transition: box-shadow 0.18s ease;
+      }
+      .device-card:hover { box-shadow: 0 10px 24px rgba(72,62,98,0.18); }
+      .device-icon {
+        width: 42px; height: 42px; border-radius: 12px;
+        display: grid; place-items: center;
+        font-size: 1.3rem; flex-shrink: 0;
+      }
+      .device-icon.role-admin   { background: #ffe0e0; }
+      .device-icon.role-officer { background: #d7e9ee; }
+      .device-icon.role-kiosk   { background: #ebe3f0; }
+      .device-icon.role-guest   { background: #f0ede8; }
+      .device-meta { flex: 1; min-width: 0; }
+      .device-meta .d-role {
+        font-family: 'Sora', sans-serif; font-size: 0.7rem; font-weight: 800;
+        letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-soft);
+      }
+      .device-meta .d-name {
+        font-family: 'Sora', sans-serif; font-size: 1rem; font-weight: 700;
+        color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .device-meta .d-info {
+        font-size: 0.76rem; color: var(--text-soft); margin-top: 2px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .btn-disconnect {
+        flex-shrink: 0; border-radius: 10px; padding: 7px 14px;
+        font-family: 'Sora', sans-serif; font-size: 0.76rem; font-weight: 700;
+        background: #ffe0e0; color: #7a1f1f; border: 1px solid #e8b4b4;
+        cursor: pointer; transition: all 0.16s ease;
+      }
+      .btn-disconnect:hover { background: #c73838; color: #fff; border-color: #c73838; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(199,56,56,0.28); }
+      .devices-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+      .devices-count-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #ebe3f0; border: 1px solid var(--surface-border);
+        border-radius: 999px; padding: 3px 12px;
+        font-size: 0.75rem; font-weight: 800; color: #4f4268;
+        font-family: 'Sora', sans-serif; letter-spacing: 0.5px;
+      }
+      .devices-count-badge .dot-pulse {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: #0f845a; animation: pulse 2s infinite;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-6">
+
+    <main class="panel max-w-7xl mx-auto rounded-3xl p-5 md:p-8">
+
+      <!-- Header -->
+      <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide"
+             style="border-color: var(--surface-border); background: #ebe3f0; color: var(--peach);">Admin Dashboard</p>
+          <h1 id="welcomeTitle" class="text-3xl md:text-4xl font-extrabold mt-1" style="color: var(--text-main);">ADMIN OVERVIEW</h1>
+          <p class="text-sm mt-1" style="color: var(--text-soft);">Real-time view of all queues, clients, and activity across DMW and OWWA.</p>
+        </div>
+        <div class="flex flex-wrap gap-2 items-center">
+          <span id="liveClock" class="font-mono text-sm font-semibold px-3 py-2 rounded-xl"
+                style="background: #ebe3f0; color: #4f4268; border: 1px solid var(--surface-border);">--:--:--</span>
+          <button id="refreshBtn" type="button"
+                  class="rounded-xl px-3 py-2 text-sm font-semibold"
+                  style="background: var(--cyan); color: #241c35;">Refresh</button>
+          <button id="resetBtn" type="button"
+                  class="rounded-xl px-3 py-2 text-sm font-semibold"
+                  style="background: #ffe0e0; color: #7a1f1f; border: 1px solid #e8b4b4;">💾 Backup &amp; Reset</button>
+          <button id="logoutBtn" type="button"
+                  class="rounded-xl px-3 py-2 text-sm font-semibold"
+                  style="background: #efe6f4; color: #4f4268; border: 1px solid var(--surface-border);">Log Out</button>
+        </div>
+      </header>
+
+      <!-- Stats Row -->
+      <section class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-6">
+        <div class="stat-card">
+          <div class="stat-num" id="statTotal">—</div>
+          <div class="stat-label">Total Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statWaiting" style="color: #4f4268;">—</div>
+          <div class="stat-label">Waiting</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statDone" style="color: #0f845a;">—</div>
+          <div class="stat-label">Done</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statDmwWaiting" style="color: #1a5f70;">—</div>
+          <div class="stat-label">DMW Waiting</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statOwwaWaiting" style="color: #4f4268;">—</div>
+          <div class="stat-label">OWWA Waiting</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statDmwDone" style="color: #1a5f70;">—</div>
+          <div class="stat-label">DMW Done</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statOwwaDone" style="color: #4f4268;">—</div>
+          <div class="stat-label">OWWA Done</div>
+        </div>
+      </section>
+
+      <!-- Connected Devices -->
+      <section class="panel rounded-2xl p-4 mb-6" id="devicesSection">
+        <div class="section-title mb-3">
+          <span class="live-dot"></span>
+          Connected Devices
+          <span class="devices-count-badge ml-2" id="devicesCountBadge">
+            <span class="dot-pulse"></span>
+            <span id="devicesCount">0</span> online
+          </span>
+          <button id="refreshDevicesBtn" class="tab-btn ml-auto">↺ Refresh</button>
+        </div>
+        <div class="devices-grid" id="devicesList">
+          <div class="empty-box">No devices connected.</div>
+        </div>
+      </section>
+
+      <!-- Live Queues -->
+      <section class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+        <!-- DMW Queue -->
+        <div class="panel rounded-2xl p-4">
+          <div class="section-title">
+            <span class="live-dot"></span>
+            DMW — Waiting Queue
+            <span class="badge badge-dmw ml-auto" id="dmwCount">0</span>
+          </div>
+          <div id="dmwQueue" class="space-y-2">
+            <div class="empty-box">No waiting clients in DMW.</div>
+          </div>
+        </div>
+
+        <!-- OWWA Queue -->
+        <div class="panel rounded-2xl p-4">
+          <div class="section-title">
+            <span class="live-dot"></span>
+            OWWA — Waiting Queue
+            <span class="badge badge-owwa ml-auto" id="owwaCount">0</span>
+          </div>
+          <div id="owwaQueue" class="space-y-2">
+            <div class="empty-box">No waiting clients in OWWA.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Recent Activity -->
+      <section class="panel rounded-2xl p-4">
+        <div class="section-title mb-3">
+          <span class="live-dot"></span>
+          Recent Activity
+          <span class="text-xs font-normal ml-1" style="color: var(--text-soft);">(last 50 tickets, newest first)</span>
+          <div class="ml-auto flex gap-2">
+            <button id="tabAll"     class="tab-btn active" data-filter="">All</button>
+            <button id="tabWaiting" class="tab-btn"        data-filter="waiting">Waiting</button>
+            <button id="tabDone"    class="tab-btn"        data-filter="done">Done</button>
+            <button id="tabDmw"     class="tab-btn"        data-filter="DMW">DMW</button>
+            <button id="tabOwwa"    class="tab-btn"        data-filter="OWWA">OWWA</button>
+          </div>
+        </div>
+        <div id="activityList">
+          <div class="empty-box">Loading activity...</div>
+        </div>
+      </section>
+
+      <!-- Database Backups -->
+      <section class="panel rounded-2xl p-4 mt-4">
+        <div class="section-title mb-3">
+          💾 Database Backups
+          <span class="text-xs font-normal ml-1" style="color: var(--text-soft);">Auto-saved daily at midnight</span>
+          <button id="loadBackupsBtn" class="tab-btn ml-auto">↺ Refresh List</button>
+        </div>
+        <div id="backupList">
+          <div class="empty-box">Loading backups...</div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Error Popup -->
+    <div id="errorPopup" class="popup-backdrop" aria-hidden="true" role="dialog" aria-label="Error alert">
+      <div class="popup-card">
+        <p class="popup-title">System Notice</p>
+        <p id="errorPopupMessage" class="popup-message">Something went wrong.</p>
+        <button id="errorPopupClose" type="button"
+                class="mt-3 w-full rounded-xl px-3 py-2 text-sm font-semibold"
+                style="background: #9b8ec7; color: #241c35;">Okay</button>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io();
+
+      // DOM refs
+      const welcomeTitle   = document.getElementById('welcomeTitle');
+      const liveClock      = document.getElementById('liveClock');
+      const refreshBtn     = document.getElementById('refreshBtn');
+      const resetBtn       = document.getElementById('resetBtn');
+      const logoutBtn      = document.getElementById('logoutBtn');
+      const loadBackupsBtn = document.getElementById('loadBackupsBtn');
+      const backupListEl   = document.getElementById('backupList');
+      const errorPopup     = document.getElementById('errorPopup');
+      const errorPopupMsg  = document.getElementById('errorPopupMessage');
+      const errorPopupClose= document.getElementById('errorPopupClose');
+
+      const devicesListEl  = document.getElementById('devicesList');
+      const devicesCountEl = document.getElementById('devicesCount');
+      const refreshDevicesBtn = document.getElementById('refreshDevicesBtn');
+
+      const statTotal      = document.getElementById('statTotal');
+      const statWaiting    = document.getElementById('statWaiting');
+      const statDone       = document.getElementById('statDone');
+      const statDmwWaiting = document.getElementById('statDmwWaiting');
+      const statOwwaWaiting= document.getElementById('statOwwaWaiting');
+      const statDmwDone    = document.getElementById('statDmwDone');
+      const statOwwaDone   = document.getElementById('statOwwaDone');
+
+      const dmwQueueEl     = document.getElementById('dmwQueue');
+      const owwaQueueEl    = document.getElementById('owwaQueue');
+      const dmwCountEl     = document.getElementById('dmwCount');
+      const owwaCountEl    = document.getElementById('owwaCount');
+      const activityList   = document.getElementById('activityList');
+
+      let currentFilter = '';
+      let recentData = [];
+
+      // Auth
+      let adminAuth = null;
+      try { adminAuth = JSON.parse(sessionStorage.getItem('adminAuth') || 'null'); } catch (_) {}
+
+      // Popup
+      function showError(msg) {
+        errorPopupMsg.textContent = msg;
+        errorPopup.classList.add('show');
+        errorPopup.setAttribute('aria-hidden', 'false');
+      }
+      function hideError() {
+        errorPopup.classList.remove('show');
+        errorPopup.setAttribute('aria-hidden', 'true');
+      }
+      errorPopupClose.addEventListener('click', hideError);
+      errorPopup.addEventListener('click', (e) => { if (e.target === errorPopup) hideError(); });
+
+      // Clock
+      function updateClock() {
+        liveClock.textContent = new Date().toLocaleTimeString();
+      }
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      // Escape
+      function esc(val) {
+        return String(val)
+          .replaceAll('&','&amp;').replaceAll('<','&lt;')
+          .replaceAll('>','&gt;').replaceAll('"','&quot;')
+          .replaceAll("'",'&#39;');
+      }
+
+      function formatAddress(c) {
+        return [c.barangay, c.municipality, c.province].filter(Boolean).join(', ');
+      }
+
+      function agencyBadge(agency) {
+        const cls = agency === 'DMW' ? 'badge-dmw' : 'badge-owwa';
+        return `<span class="badge ${cls}">${esc(agency)}</span>`;
+      }
+
+      function statusBadge(status) {
+        const cls = status === 'done' ? 'badge-done' : 'badge-waiting';
+        return `<span class="badge ${cls}">${esc(status)}</span>`;
+      }
+
+      // Render queue cards
+      function renderQueue(clients, containerEl, countEl, emptyMsg, flash = false) {
+        countEl.textContent = clients.length;
+        if (!clients.length) {
+          containerEl.innerHTML = `<div class="empty-box">${emptyMsg}</div>`;
+          return;
+        }
+
+        containerEl.innerHTML = clients.map((c) => `
+          <div class="queue-card${flash ? ' new-flash' : ''}">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <p class="text-sm font-semibold" style="color: var(--text-soft);">
+                ${esc(c.display_ticket || '#' + c.ticket_id)}
+                ${c.assigned_to ? `<span style="color: var(--peach);">→ ${esc(c.assigned_to)}</span>` : ''}
+              </p>
+              <div class="flex items-center gap-1">
+                ${c.priority ? '<span class="badge badge-priority">PRIORITY</span>' : ''}
+                ${statusBadge(c.status)}
+              </div>
+            </div>
+            <p class="mt-1 font-bold" style="color: var(--text-main); font-size: 1.05rem;">${esc(c.client_identifier)}</p>
+            ${c.gender ? `<p class="text-xs mt-0.5" style="color:var(--text-soft);">Gender: ${esc(c.gender)}</p>` : ''}
+            ${formatAddress(c) ? `<p class="text-xs mt-0.5" style="color:var(--text-soft);">${esc(formatAddress(c))}</p>` : ''}
+            ${(c.services||[]).length ? `<div class="mt-2 flex flex-wrap gap-1">${(c.services).map(s=>`<span class="badge badge-waiting" style="font-size:0.7rem;">${esc(s)}</span>`).join('')}</div>` : ''}
+            <div class="mt-3 flex gap-2">
+              <button onclick="markTicketDone(${c.id || c.ticket_id})" class="text-xs rounded px-2 py-1" style="background:#e5f0ea; color:#2f5f4a; border:1px solid #9fc4b2;">Mark Done</button>
+              <button onclick="cancelTicket(${c.id || c.ticket_id})" class="text-xs rounded px-2 py-1" style="background:#ebe3f0; color:#4f4268; border:1px solid #bda6ce;">Cancel</button>
+              <button onclick="deleteTicket(${c.id || c.ticket_id})" class="text-xs rounded px-2 py-1" style="background:#ffe0e0; color:#7a1f1f; border:1px solid #e8b4b4;">Delete</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Render activity log
+      function renderActivity(data, filter) {
+        let filtered = data;
+        if (filter === 'waiting' || filter === 'done') {
+          filtered = data.filter(c => c.status === filter);
+        } else if (filter === 'DMW' || filter === 'OWWA') {
+          filtered = data.filter(c => c.agency === filter);
+        }
+
+        if (!filtered.length) {
+          activityList.innerHTML = '<div class="empty-box">No records match the selected filter.</div>';
+          return;
+        }
+
+        activityList.innerHTML = filtered.map((c, i) => `
+          <div class="activity-row flex flex-wrap items-start gap-3" style="animation-delay: ${Math.min(i * 20, 300)}ms;">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <p class="text-sm font-bold" style="color: var(--text-main); white-space: nowrap;">
+                ${esc(c.display_ticket || '#' + c.ticket_id)}
+              </p>
+              ${agencyBadge(c.agency)}
+              ${c.priority ? '<span class="badge badge-priority">PRI</span>' : ''}
+              ${statusBadge(c.status)}
+              <p class="text-sm font-semibold truncate" style="color: var(--text-main);">${esc(c.client_identifier)}</p>
+            </div>
+            <div class="text-xs text-right flex-shrink-0" style="color: var(--text-soft);">
+              ${c.assigned_to ? `<p>→ ${esc(c.assigned_to)}</p>` : ''}
+              <p>${c.created_at ? new Date(c.created_at).toLocaleString() : ''}</p>
+              <div class="mt-1 flex gap-1 justify-end">
+                ${c.status === 'waiting' ? `<button onclick="markTicketDone(${c.id || c.ticket_id})" class="text-[0.65rem] rounded px-1.5 py-0.5" style="background:#e5f0ea; color:#2f5f4a; border:1px solid #9fc4b2;">Mark Done</button>` : ''}
+                ${c.status === 'waiting' ? `<button onclick="cancelTicket(${c.id || c.ticket_id})" class="text-[0.65rem] rounded px-1.5 py-0.5" style="background:#ebe3f0; color:#4f4268; border:1px solid #bda6ce;">Cancel</button>` : ''}
+                <button onclick="deleteTicket(${c.id || c.ticket_id})" class="text-[0.65rem] rounded px-1.5 py-0.5" style="background:#ffe0e0; color:#7a1f1f; border:1px solid #e8b4b4;">Delete</button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      // Ticket Action Handlers
+      window.markTicketDone = async function(id) {
+        if (!confirm('Mark this ticket as Done?')) return;
+        try {
+          const res = await fetch(`/api/admin/ticket/${id}/done`, { method: 'POST', credentials: 'same-origin' });
+          if (!res.ok) throw new Error();
+          loadOverview(false);
+        } catch (_) {
+          showError('Failed to mark ticket as done.');
+        }
+      };
+
+      window.cancelTicket = async function(id) {
+        if (!confirm('Cancel this ticket? It will be removed from the active queue.')) return;
+        try {
+          const res = await fetch(`/api/admin/ticket/${id}/cancel`, { method: 'POST', credentials: 'same-origin' });
+          if (!res.ok) throw new Error();
+          loadOverview(false);
+        } catch (_) {
+          showError('Failed to cancel ticket.');
+        }
+      };
+
+      window.deleteTicket = async function(id) {
+        if (!confirm('⚠️ Permanently delete this ticket? This cannot be undone.')) return;
+        try {
+          const res = await fetch(`/api/admin/ticket/${id}`, { method: 'DELETE', credentials: 'same-origin' });
+          if (!res.ok) throw new Error();
+          loadOverview(false);
+        } catch (_) {
+          showError('Failed to delete ticket.');
+        }
+      };
+
+      // Load overview
+      async function loadOverview(flashNew = false) {
+        try {
+          const res = await fetch('/api/admin/overview', { cache: 'no-store', credentials: 'same-origin' });
+          if (!res.ok) {
+            if (res.status === 401) {
+              window.location.replace('/index.html');
+              return;
+            }
+            throw new Error('Failed');
+          }
+
+          const data = await res.json();
+
+          // Stats
+          statTotal.textContent      = data.stats.total;
+          statWaiting.textContent    = data.stats.waiting;
+          statDone.textContent       = data.stats.done;
+          statDmwWaiting.textContent = data.stats.dmw_waiting;
+          statOwwaWaiting.textContent= data.stats.owwa_waiting;
+          statDmwDone.textContent    = data.stats.dmw_done;
+          statOwwaDone.textContent   = data.stats.owwa_done;
+
+          // Queues
+          renderQueue(data.dmw,  dmwQueueEl,  dmwCountEl,  'No waiting clients in DMW.', flashNew);
+          renderQueue(data.owwa, owwaQueueEl, owwaCountEl, 'No waiting clients in OWWA.', flashNew);
+
+          // Activity
+          recentData = data.recent;
+          renderActivity(recentData, currentFilter);
+
+        } catch (_) {
+          showError('Failed to load admin overview. Please refresh.');
+        }
+      }
+
+      // Tab filter
+      document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentFilter = btn.dataset.filter;
+          renderActivity(recentData, currentFilter);
+        });
+      });
+
+      // ── Connected Devices ──────────────────────────────────────────────────
+      const ROLE_ICON = { admin: '🛡️', officer: '🧑‍💼', kiosk: '🖥️', guest: '👤' };
+      const ROLE_LABEL = { admin: 'Admin', officer: 'Officer', kiosk: 'Kiosk', guest: 'Guest / Board' };
+
+      function renderDevices(devices) {
+        devicesCountEl.textContent = devices.length;
+        if (!devices.length) {
+          devicesListEl.innerHTML = '<div class="empty-box">No devices connected.</div>';
+          return;
+        }
+
+        devicesListEl.innerHTML = devices.map((d) => {
+          const icon = ROLE_ICON[d.role] || '📡';
+          const roleLbl = ROLE_LABEL[d.role] || d.role;
+          const nameLbl = d.username ? d.username.toUpperCase() : (d.role === 'guest' ? 'Unauthenticated' : roleLbl);
+          const agencyLbl = d.agency ? ` &nbsp;·&nbsp; ${esc(d.agency)}` : '';
+          const connectedSince = d.connectedAt ? new Date(d.connectedAt).toLocaleTimeString() : '—';
+          const ua = d.userAgent ? esc(d.userAgent.slice(0, 60) + (d.userAgent.length > 60 ? '…' : '')) : 'Unknown browser';
+          // Don't show disconnect button for admin itself (own socket)  
+          const isSelf = (d.role === 'admin');
+          return `
+            <div class="device-card" id="dev-${esc(d.socketId)}">
+              <div class="device-icon role-${esc(d.role)}">${icon}</div>
+              <div class="device-meta">
+                <div class="d-role">${esc(roleLbl)}${agencyLbl}</div>
+                <div class="d-name">${esc(nameLbl)}</div>
+                <div class="d-info" title="${esc(d.ip)}">${esc(d.ip)} &nbsp;·&nbsp; Since ${connectedSince}</div>
+                <div class="d-info" title="${esc(d.userAgent || '')}">${ua}</div>
+              </div>
+              <button class="btn-disconnect" onclick="disconnectDevice('${esc(d.socketId)}')"${
+                isSelf ? ' title="You can disconnect your own admin session"' : ''
+              }>Disconnect</button>
+            </div>
+          `;
+        }).join('');
+      }
+
+      async function loadDevices() {
+        try {
+          const res = await fetch('/api/admin/devices', { credentials: 'same-origin', cache: 'no-store' });
+          if (!res.ok) return;
+          const devices = await res.json();
+          renderDevices(devices);
+        } catch (_) {
+          devicesListEl.innerHTML = '<div class="empty-box">Could not load device list.</div>';
+        }
+      }
+
+      window.disconnectDevice = async function(socketId) {
+        if (!confirm('⚠️ Disconnect this device? The user will be redirected to the login page.')) return;
+        try {
+          const res = await fetch(`/api/admin/devices/${encodeURIComponent(socketId)}/disconnect`, {
+            method: 'POST',
+            credentials: 'same-origin',
+          });
+          const result = await res.json();
+          if (!result.ok) {
+            showError(result.message || 'Failed to disconnect device.');
+          } else {
+            const card = document.getElementById(`dev-${socketId}`);
+            if (card) { card.style.opacity = '0'; card.style.transform = 'scale(0.95)'; card.style.transition = 'all 0.3s ease'; setTimeout(() => card.remove(), 300); }
+            loadDevices();
+          }
+        } catch (_) {
+          showError('Failed to disconnect device.');
+        }
+      };
+
+      refreshDevicesBtn.addEventListener('click', loadDevices);
+
+      // Load backup list
+      async function loadBackups() {
+        try {
+          const res = await fetch('/api/admin/backups', { credentials: 'same-origin', cache: 'no-store' });
+          if (!res.ok) throw new Error('Failed');
+          const backups = await res.json();
+
+          if (!backups.length) {
+            backupListEl.innerHTML = '<div class="empty-box">No backups yet. Backups are created automatically at midnight or when you click Backup &amp; Reset.</div>';
+            return;
+          }
+
+          backupListEl.innerHTML = backups.map((b) => `
+            <div class="activity-row flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p class="text-sm font-bold" style="color:var(--text-main);">📁 ${esc(b.filename)}</p>
+                <p class="text-xs" style="color:var(--text-soft);">${esc(b.label)} &nbsp;·&nbsp; ${(b.size / 1024).toFixed(1)} KB</p>
+              </div>
+            </div>
+          `).join('');
+        } catch (_) {
+          backupListEl.innerHTML = '<div class="empty-box">Could not load backup list.</div>';
+        }
+      }
+
+      // Manual backup + reset with confirmation
+      resetBtn.addEventListener('click', async () => {
+        if (!confirm('⚠️ This will BACKUP the current data and CLEAR the entire queue.\n\nContinue?')) return;
+        resetBtn.textContent = 'Working...';
+        resetBtn.disabled = true;
+        try {
+          const res = await fetch('/api/admin/backup-and-reset', {
+            method: 'POST',
+            credentials: 'same-origin',
+          });
+          const result = await res.json();
+          alert(result.ok ? `✅ ${result.message}` : `❌ ${result.message}`);
+          if (result.ok) {
+            loadOverview(false);
+            loadBackups();
+          }
+        } catch (_) {
+          alert('❌ Backup & reset request failed. Check server.');
+        } finally {
+          resetBtn.textContent = '💾 Backup & Reset';
+          resetBtn.disabled = false;
+        }
+      });
+
+      loadBackupsBtn.addEventListener('click', loadBackups);
+
+      // Socket: listen to all agency events and reload
+      socket.on('dmw_incoming_client', () => loadOverview(true));
+      socket.on('dmw_client_updated',  () => loadOverview(false));
+      socket.on('owwa_incoming_client',() => loadOverview(true));
+      socket.on('owwa_client_updated', () => loadOverview(false));
+      socket.on('system_daily_reset',  () => { loadOverview(false); loadBackups(); });
+      socket.on('admin_devices_changed', () => loadDevices());
+
+      // Auth check and username
+      (async () => {
+        try {
+          const res = await fetch('/api/auth/session', { credentials: 'same-origin', cache: 'no-store' });
+          if (!res.ok) throw new Error();
+          const auth = await res.json();
+          if (auth.authenticated && auth.role === 'admin') {
+            welcomeTitle.textContent = `ADMIN — ${String(auth.username || '').toUpperCase()}`;
+            sessionStorage.setItem('adminAuth', JSON.stringify(auth));
+          }
+        } catch (_) {}
+      })();
+
+      refreshBtn.addEventListener('click', () => loadOverview(false));
+
+      logoutBtn.addEventListener('click', async () => {
+        try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (_) {}
+        sessionStorage.removeItem('adminAuth');
+        window.location.href = '/index.html';
+      });
+
+      // Initial load + auto-refresh every 10s
+      loadOverview(false);
+      loadBackups();
+      loadDevices();
+      setInterval(() => loadOverview(false), 10000);
+      setInterval(() => loadDevices(), 15000);
+    </script>
+</body>
+</html>

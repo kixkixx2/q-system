@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Login</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/system-logo.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --bg-a: #f2eae0;
+        --bg-b: #b4d3d9;
+        --surface: #f2eae0;
+        --surface-soft: #b4d3d9;
+        --surface-border: #bda6ce;
+        --text-main: #2f2740;
+        --text-soft: #5f5674;
+        --peach: #9b8ec7;
+        --cyan: #9b8ec7;
+      }
+
+      body {
+        font-family: 'Outfit', sans-serif;
+        background: radial-gradient(circle at 12% 20%, #f7f2eb 0%, transparent 42%),
+          radial-gradient(circle at 84% 14%, #d9ebef 0%, transparent 42%),
+          linear-gradient(145deg, var(--bg-a) 0%, var(--bg-b) 100%);
+      }
+
+      h1,
+      h2,
+      h3,
+      button,
+      label {
+        font-family: 'Sora', sans-serif;
+      }
+
+      .panel {
+        border: 1px solid var(--surface-border);
+        background: linear-gradient(180deg, #f7f1e8 0%, var(--surface) 100%);
+        box-shadow: 0 18px 34px rgba(72, 62, 98, 0.18);
+      }
+
+      button,
+      select,
+      a {
+        cursor: pointer;
+      }
+
+      button,
+      a {
+        transition: transform 0.16s ease, filter 0.16s ease, box-shadow 0.16s ease;
+      }
+
+      button:hover,
+      a:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.06);
+        box-shadow: 0 8px 18px rgba(5, 15, 30, 0.28);
+      }
+
+      button:active,
+      a:active {
+        transform: translateY(0);
+        filter: brightness(0.98);
+      }
+
+      .field-control {
+        border: 1px solid var(--surface-border);
+        background: var(--surface-soft);
+        color: var(--text-main);
+        transition: border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+      }
+
+      .field-control:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 2px #9b8ec744;
+        outline: none;
+      }
+
+      .field-control::placeholder {
+        color: var(--text-soft);
+      }
+
+      .popup-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(47, 39, 64, 0.18);
+        display: grid;
+        place-items: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.16s ease;
+        z-index: 50;
+      }
+
+      .popup-backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .popup-card {
+        width: min(92vw, 360px);
+        border-radius: 16px;
+        border: 1px solid #bda6ce;
+        background: linear-gradient(180deg, #f6efe6 0%, #ebe0f0 100%);
+        box-shadow: 0 18px 36px rgba(79, 63, 109, 0.2);
+        padding: 16px;
+        color: #3d3253;
+      }
+
+      .popup-title {
+        font-family: 'Sora', sans-serif;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+
+      .popup-message {
+        font-size: 0.94rem;
+        color: #4f4268;
+      }
+
+      .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .brand-logo {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 1px solid #bda6ce;
+        background: #f2eae0;
+        padding: 4px;
+        box-shadow: 0 0 10px rgba(155, 142, 199, 0.24);
+      }
+
+      .title-gradient {
+        color: var(--text-main);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex items-center justify-center p-4 md:p-8">
+    <main class="panel w-full max-w-md rounded-3xl p-6 md:p-8 space-y-5">
+      <header class="space-y-2">
+        <div class="brand-row">
+          <img src="/assets/system-logo.svg" alt="Queue system logo" class="brand-logo" />
+          <p class="inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide" style="border-color: var(--surface-border); background: #ebe3f0; color: var(--peach);">Unified Login</p>
+        </div>
+        <h1 class="title-gradient text-3xl font-extrabold">System Access</h1>
+        <p class="text-sm" style="color: var(--text-soft);">All users start here to continue.</p>
+      </header>
+
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label for="username" class="block text-sm mb-1" style="color: var(--peach);">Username</label>
+          <input id="username" type="text" autocomplete="username" class="field-control w-full rounded-xl px-3 py-2.5" placeholder="Enter username" required />
+        </div>
+        <div>
+          <label for="password" class="block text-sm mb-1" style="color: var(--peach);">Password</label>
+          <input id="password" type="password" autocomplete="current-password" class="field-control w-full rounded-xl px-3 py-2.5" placeholder="Enter password" required />
+        </div>
+        <button type="submit" class="w-full rounded-xl px-3 py-2.5 text-sm font-semibold" style="background: var(--cyan); color: #241c35;">Log In</button>
+      </form>
+
+      <p id="statusMsg" class="text-sm" style="color: var(--text-soft);">Sign in to continue.</p>
+    </main>
+
+    <div id="errorPopup" class="popup-backdrop" aria-hidden="true" role="dialog" aria-label="Login error">
+      <div class="popup-card">
+        <p class="popup-title">System Notice</p>
+        <p id="errorPopupMessage" class="popup-message">Something went wrong.</p>
+        <button id="errorPopupClose" type="button" class="mt-3 w-full rounded-xl px-3 py-2 text-sm font-semibold" style="background: #9b8ec7; color: #241c35;">Okay</button>
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const returnToParam = String(params.get('returnTo') || '');
+
+      function sanitizeReturnPath(inputPath, fallbackPath) {
+        if (!inputPath || !inputPath.startsWith('/')) {
+          return fallbackPath;
+        }
+
+        if (inputPath.startsWith('//')) {
+          return fallbackPath;
+        }
+
+        return inputPath;
+      }
+
+      const form = document.getElementById('loginForm');
+      const usernameInput = document.getElementById('username');
+      const passwordInput = document.getElementById('password');
+      const statusMsg = document.getElementById('statusMsg');
+      const errorPopup = document.getElementById('errorPopup');
+      const errorPopupMessage = document.getElementById('errorPopupMessage');
+      const errorPopupClose = document.getElementById('errorPopupClose');
+
+      function showErrorPopup(message) {
+        errorPopupMessage.textContent = message;
+        errorPopup.classList.add('show');
+        errorPopup.setAttribute('aria-hidden', 'false');
+      }
+
+      function hideErrorPopup() {
+        errorPopup.classList.remove('show');
+        errorPopup.setAttribute('aria-hidden', 'true');
+      }
+
+      errorPopupClose.addEventListener('click', hideErrorPopup);
+      errorPopup.addEventListener('click', (event) => {
+        if (event.target === errorPopup) {
+          hideErrorPopup();
+        }
+      });
+
+      function getFallbackReturn(role, agency) {
+        if (role === 'admin')   return '/admin.html';
+        if (role === 'officer') return agency === 'OWWA' ? '/owwa.html' : '/dmw.html';
+        return '/kiosk.html';
+      }
+
+      function getTargetAgency(pathname, query) {
+        const path = String(pathname || '').toLowerCase();
+        if (path === '/dmw.html') {
+          return 'DMW';
+        }
+
+        if (path === '/owwa.html') {
+          return 'OWWA';
+        }
+
+        if (path === '/officer.html' || path === '/history.html') {
+          const queryAgency = String(query.get('agency') || '').toUpperCase();
+          if (queryAgency === 'DMW' || queryAgency === 'OWWA') {
+            return queryAgency;
+          }
+        }
+
+        return '';
+      }
+
+      function isReturnPathAllowedForSession(returnPath, role, agency) {
+        let resolved;
+
+        try {
+          resolved = new URL(returnPath, window.location.origin);
+        } catch (_error) {
+          return false;
+        }
+
+        const path = resolved.pathname.toLowerCase();
+        const targetAgency = getTargetAgency(path, resolved.searchParams);
+
+        if (path === '/index.html') {
+          return false;
+        }
+
+        if (role === 'kiosk') {
+          return path === '/kiosk.html';
+        }
+
+        if (role !== 'officer') {
+          return false;
+        }
+
+        if (path === '/kiosk.html') {
+          return false;
+        }
+
+        if (!targetAgency) {
+          return true;
+        }
+
+        return String(agency || '').toUpperCase() === targetAgency;
+      }
+
+      async function checkExistingSession() {
+        try {
+          const response = await fetch('/api/auth/session', {
+            credentials: 'same-origin',
+            cache: 'no-store',
+          });
+
+          if (!response.ok) {
+            return;
+          }
+
+          const data = await response.json();
+          if (data?.authenticated) {
+            const fallbackReturn = getFallbackReturn(data.role, data.agency);
+
+            if (data.role === 'admin') {
+              sessionStorage.setItem('adminAuth', JSON.stringify({
+                role: data.role,
+                username: data.username,
+                loggedInAt: data.loggedInAt,
+              }));
+              window.location.replace(fallbackReturn);
+              return;
+            }
+
+            const requestedReturn = sanitizeReturnPath(returnToParam, fallbackReturn);
+            const returnTo = isReturnPathAllowedForSession(requestedReturn, data.role, data.agency)
+              ? requestedReturn
+              : fallbackReturn;
+
+            if (data.role === 'officer') {
+              sessionStorage.setItem(
+                'officerAuth',
+                JSON.stringify({
+                  agency: data.agency,
+                  username: data.username,
+                  loggedInAt: data.loggedInAt,
+                })
+              );
+            } else {
+              sessionStorage.setItem(
+                'kioskAuth',
+                JSON.stringify({
+                  role: data.role,
+                  username: data.username,
+                  loggedInAt: data.loggedInAt,
+                })
+              );
+            }
+
+            window.location.replace(returnTo);
+          }
+        } catch (_error) {
+          // Ignore network/session probe errors on login page.
+        }
+      }
+
+      checkExistingSession();
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!username || !password) {
+          statusMsg.textContent = 'Invalid username or password.';
+          statusMsg.style.color = '#fdb56b';
+          showErrorPopup('Username and password are required.');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ username, password }),
+          });
+
+          const result = await response.json().catch(() => ({}));
+
+          if (!response.ok || !result?.ok || !result?.auth) {
+            statusMsg.textContent = result?.message || 'Invalid username or password.';
+            statusMsg.style.color = '#fdb56b';
+            showErrorPopup(result?.message || 'Invalid username or password.');
+            return;
+          }
+
+          const authRole   = result.auth.role;
+          const authAgency = result.auth.agency;
+          const returnTo   = sanitizeReturnPath(returnToParam, getFallbackReturn(authRole, authAgency));
+
+          if (authRole === 'admin') {
+            sessionStorage.setItem('adminAuth', JSON.stringify(result.auth));
+          } else if (authRole === 'officer') {
+            sessionStorage.setItem('officerAuth', JSON.stringify(result.auth));
+          } else {
+            sessionStorage.setItem('kioskAuth', JSON.stringify(result.auth));
+          }
+          statusMsg.textContent = 'Login successful. Redirecting...';
+          statusMsg.style.color = '#8ee7c2';
+          window.location.href = returnTo;
+        } catch (_error) {
+          statusMsg.textContent = 'Login failed. Please try again.';
+          statusMsg.style.color = '#fdb56b';
+          showErrorPopup('Login failed. Please try again.');
+        }
+      });
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Queue System logo">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#12d6cf"/>
+      <stop offset="100%" stop-color="#2b7cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="220" height="220" rx="44" fill="#112436"/>
+  <circle cx="110" cy="92" r="52" fill="none" stroke="url(#g1)" stroke-width="20"/>
+  <path d="M80 126c6 20 24 34 46 34 14 0 27-6 36-16" fill="none" stroke="#f5c24b" stroke-width="14" stroke-linecap="round"/>
+  <rect x="52" y="166" width="116" height="20" rx="10" fill="#2b3f54"/>
+  <text x="110" y="181" text-anchor="middle" font-family="Sora, Arial, sans-serif" font-size="12" font-weight="700" fill="#c9dbef">QUEUE SYSTEM</text>
+</svg>

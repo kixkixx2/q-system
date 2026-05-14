@@ -1,16 +1,16 @@
-# 🏢 Local Queue Management System
+# Local Queue Management System
 
 > LAN-based queue system for **DMW** and **OWWA** with real-time serving board, kiosk intake, officer dashboards, and admin panel.
 
 ---
 
-## ⚡ Quick Start (3 Steps)
+##  Quick Start (3 Steps)
 
 ### Step 1 — Install Node.js
 
 Download and install **Node.js** (LTS version) from:
 
-👉 **https://nodejs.org**
+ **https://nodejs.org**
 
 During installation, just click **Next → Next → Finish** (use all defaults).
 
@@ -45,11 +45,11 @@ Server running at http://localhost:3000
 Other PCs on the same WiFi connect via http://192.168.x.x:3000
 ```
 
-✅ **That's it! The system is now running.**
+ **That's it! The system is now running.**
 
 ---
 
-## 🌐 How to Access the Pages
+## How to Access the Pages
 
 Open **Google Chrome** (or any browser) and go to:
 
@@ -70,7 +70,7 @@ Example: `http://192.168.1.100:3000/kiosk.html`
 
 ---
 
-## 🔑 Default Login Accounts
+##  Default Login Accounts
 
 | Role        | Username | Password   |
 | ----------- | -------- | ---------- |
@@ -87,7 +87,7 @@ Example: `http://192.168.1.100:3000/kiosk.html`
 
 ---
 
-## 🛑 How to Stop the Server
+## How to Stop the Server
 
 In the Command Prompt window where the server is running, press:
 
@@ -99,7 +99,7 @@ Then type `Y` and press Enter when prompted.
 
 ---
 
-## 🔄 Restarting the Server
+## Restarting the Server
 
 If you need to restart (e.g., after a PC reboot), just open the `local-queue-system` folder again, type `cmd` in the address bar, and run:
 
@@ -109,7 +109,7 @@ npm start
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 local-queue-system/
@@ -145,7 +145,7 @@ local-queue-system/
 
 ---
 
-## 💡 Technical Requirements
+## Technical Requirements
 
 - **OS:** Windows 10 / 11 (also works on macOS and Linux)
 - **Software:** Node.js v18 or later (LTS recommended)

@@ -18,7 +18,7 @@ During installation, just click **Next → Next → Finish** (use all defaults).
 
 ### Step 2 — Install Dependencies
 
-1. Open the `local-queue-system` folder in **File Explorer**
+1. Open the `q-system-main` folder in **File Explorer**
 2. Click on the **address bar** at the top and type `cmd`, then press **Enter**
    — this opens Command Prompt directly inside the folder
 3. In the Command Prompt window, type:
